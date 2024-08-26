@@ -19,6 +19,9 @@ class User(AbstractUser):
             self.type = self.base_type
             return super().save(*args, **kwargs)
 
+# class AdminProfile(models.Model):
+#     user = models.OneToOneField(User, on_delete=models.CASCADE)
+
 class AlunoManager(BaseUserManager):
     def get_queryset(self, *args, **kwargs) -> models.QuerySet:
         return super().get_queryset(*args, **kwargs).filter(type=User.Types.STUDENT)
@@ -30,6 +33,9 @@ class Aluno(User):
     class Meta:
         proxy = True
 
+# class AlunoProfile(models.Model):
+#     user = models.OneToOneField(User, on_delete=models.CASCADE)
+
 class ProfessorManager(BaseUserManager):
     def get_queryset(self, *args, **kwargs) -> models.QuerySet:
         return super().get_queryset(*args, **kwargs).filter(type=User.Types.TEACHER)
@@ -40,6 +46,9 @@ class Professor(User):
 
     class Meta:
         proxy = True
+
+# class ProfessorProfile(models.Model):
+#     user = models.OneToOneField(User, on_delete=models.CASCADE)
 
 class Turma(models.Model):
     name = models.CharField(max_length=50)
@@ -79,3 +88,25 @@ class Conceito(models.Model):
 
     first_grade = models.CharField(max_length=2, choices=Grades.choices)
     second_grade = models.CharField(max_length=2, choices=Grades.choices)
+
+class Parente(models.Model):
+    name = models.CharField(max_length=70)
+    cpf = models.CharField(max_length=14)
+
+class Comentario(models.Model):
+    body = models.CharField(max_length=1000)
+    announcement = models.ForeignKey(Comunicado, related_name="comment", on_delete=models.CASCADE)
+
+
+# ALUNO + TURMA
+# ALUNO + CONCEITO
+# PROFESSOR + DISCIPLINA
+# TURMA + (PROFESSOR + DISCIPLINA)
+# PROFESSOR/ADMIN + COMUNICADO
+# COMENTARIO + COMUNICADO
+# COMENTARIO + USER
+# CONCEITO + DISCIPLINA
+
+# ADMINPROFILE + ADMIN
+# PROFESSORPROFILE + PROFESSOR
+# ALUNOPROFILE + ALUNO
