@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from enum import Enum
+from .utils import validate_range
 
 class User(AbstractUser):
     name = models.CharField(max_length=70, null=False, blank=False)
@@ -68,7 +69,8 @@ class Admin(User):
 
 class Class(models.Model):
     name = models.CharField(max_length=50)
-    degree = models.IntegerField()
+    degree = models.IntegerField(validators=[validate_range(1, 3)])
+    students = models.ManyToManyField(Student, related_name="_class", through="StudentClass")
 
 class Subject(models.Model):
     name = models.CharField(max_length=70)
@@ -112,7 +114,10 @@ class Grade(models.Model):
 
     grade = models.CharField(max_length=2, choices=Grades.choices)
     type = models.CharField(max_length=9, choices=Types.choices)
+    degree = models.IntegerField(validators=[validate_range(1, 3)])
+    unit = models.IntegerField(validators=[validate_range(1, 3)])
     student = models.ForeignKey(User, related_name="grades", on_delete=models.DO_NOTHING)
+    subject = models.ForeignKey(Subject, related_name="grades", on_delete=models.DO_NOTHING)
 
 class Parent(models.Model):
     name = models.CharField(max_length=70)
@@ -125,11 +130,11 @@ class Comment(models.Model):
 
 # ALUNO + TURMA
 class StudentClass(models.Model):
-    student = models.ForeignKey(User, on_delete=models.CASCADE)
+    student = models.ForeignKey(Student, on_delete=models.CASCADE)
     _class = models.ForeignKey(Class, on_delete=models.CASCADE)
 
     class Meta:
-        unique_together = ('student', '_class',)
+        unique_together = [['student', '_class']]
 
 
 # PROFESSOR + DISCIPLINA
@@ -157,13 +162,13 @@ class ClassTeacherSubject(models.Model):
 
 # PARTIALLY | COMENTARIO + USER
 
-# CONCEITO + DISCIPLINA
-class GradeSubject(models.Model):
-    grade = models.ForeignKey(Grade, on_delete=models.CASCADE)
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+# # CONCEITO + DISCIPLINA
+# class GradeSubject(models.Model):
+#     grade = models.ForeignKey(Grade, on_delete=models.CASCADE)
+#     subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
 
-    class Meta:
-        unique_together = ('grade', 'subject')
+#     class Meta:
+#         unique_together = ('grade', 'subject')
 
 # ADMINPROFILE + ADMIN
 # PROFESSORPROFILE + PROFESSOR

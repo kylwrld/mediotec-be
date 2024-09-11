@@ -1,7 +1,12 @@
 from rest_framework import serializers
 from .models import *
 
-# TO CREATE USER
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["name", "type"]
+
+# CREATE USER
 class SignupUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -27,8 +32,6 @@ class LoginUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['email', 'password']
-        # read_only_fields = ('email',)
-        # extra_kwargs = {"email": {"null": False}, "password": {"null": False}}
 
 class StudentSerializer(serializers.ModelSerializer):
     class Meta:
@@ -37,10 +40,24 @@ class StudentSerializer(serializers.ModelSerializer):
         fields = ["id", "name", "email", "type"]
         read_only_fields = ('id', "name", "email", "type")
 
+class StudentClassSerializer(serializers.ModelSerializer):
+    # student_id = serializers.IntegerField(write_only=True)
+    class Meta:
+        model = StudentClass
+        fields = ["student", "_class"]
+
+class ClassSerializerAllStudents(serializers.ModelSerializer):
+    students = StudentSerializer(read_only=True, many=True)
+
+    class Meta:
+        model = Class
+        fields = ["name", "degree", "students"]
+        read_only_fields = ("name", "degree", "students")
+
 class TeacherSerializer(serializers.ModelSerializer):
     class Meta:
         model = Teacher
-        # need to add Class
+        # TODO: need to add Class
         fields = ["id", "name", "email", "type"]
         read_only_fields = ('id', "name", "email", "type")
 
@@ -50,9 +67,6 @@ class SubjectSerializer(serializers.ModelSerializer):
         fields = ["name"]
 
 class TeacherSubjectSerializer(serializers.ModelSerializer):
-    # teacher = serializers.SerializerMethodField()
-    # subject = serializers.SerializerMethodField()
-
     class Meta:
         model = TeacherSubject
         fields = ["teacher", "subject"]
