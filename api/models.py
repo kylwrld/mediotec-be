@@ -79,6 +79,12 @@ class Announcement(models.Model):
     title = models.CharField(max_length=70)
     body = models.CharField(max_length=2000)
     user = models.ForeignKey(User, related_name="announcements", on_delete=models.DO_NOTHING)
+    _class = models.ForeignKey(Class, related_name="announcemets", on_delete=models.CASCADE, null=True)
+
+class Comment(models.Model):
+    body = models.CharField(max_length=1000)
+    announcement = models.ForeignKey(Announcement, related_name="comments", on_delete=models.CASCADE)
+    user = models.ForeignKey(User, related_name="comments", on_delete=models.DO_NOTHING)
 
 class EGrade(Enum):
     NANA = "NA"
@@ -123,10 +129,6 @@ class Parent(models.Model):
     name = models.CharField(max_length=70)
     cpf = models.CharField(max_length=14)
     student = models.ForeignKey(User, related_name="parents", on_delete=models.CASCADE)
-
-class Comment(models.Model):
-    body = models.CharField(max_length=1000)
-    announcement = models.ForeignKey(Announcement, related_name="comments", on_delete=models.CASCADE)
 
 # ALUNO + TURMA
 class StudentClass(models.Model):

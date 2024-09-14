@@ -51,12 +51,12 @@ class Login(APIView):
 class StudentView(APIView):
     def get(self, request, pk=None, format=None):
         if pk:
-            user = Student.objects.filter(pk=pk)
-        else:
-            user = Student.objects.all()
+            student = get_object_or_404(Student, pk=pk)
+            student_serializer = StudentSerializer(student)
+            return Response({"users":student_serializer.data}, status=status.HTTP_200_OK)
 
-        # TODO: CHANGE TO RETURN IN EACH IF BLOCK. RIGHT NOW, IM RETURNING A LIST WITH ONE OBJECT IF PK IS NOT NONE
-        student_serializer = StudentSerializer(user, many=True)
+        student = Student.objects.all()
+        student_serializer = StudentSerializer(student, many=True)
         return Response({"users":student_serializer.data}, status=status.HTTP_200_OK)
 
 class StudentClassView(APIView):
@@ -79,20 +79,23 @@ class StudentClassView(APIView):
 class TeacherView(APIView):
     def get(self, request, pk=None, format=None):
         if pk:
-            user = Teacher.objects.filter(pk=pk)
-        else:
-            user = Teacher.objects.all()
-        # TODO: CHANGE TO RETURN IN EACH IF BLOCK. RIGHT NOW, IM RETURNING A LIST WITH ONE OBJECT IF PK IS NOT NONE
-        teacher_serializer = TeacherSerializer(user, many=True)
-        return Response({"users":teacher_serializer.data}, status=status.HTTP_200_OK)
+            teacher = get_object_or_404(Teacher, pk=pk)
+            teacher_serializer = TeacherSerializer(teacher)
+            print(teacher, teacher_serializer.data)
+            return Response({"teacher":teacher_serializer.data}, status=status.HTTP_200_OK)
+
+        teacher = Teacher.objects.all()
+        teacher_serializer = TeacherSerializer(teacher, many=True)
+        return Response({"teacher":teacher_serializer.data}, status=status.HTTP_200_OK)
 
 class SubjectView(APIView):
     def get(self, request, pk=None, format=None):
         if pk:
             subject = get_object_or_404(Subject, pk=pk)
-        else:
-            subject = Subject.objects.all()
-            # TODO: CHANGE TO RETURN IN EACH IF BLOCK. RIGHT NOW, IM RETURNING A LIST WITH ONE OBJECT IF PK IS NOT NONE
+            subject_serializer = SubjectSerializer(subject)
+            return Response({"disciplina":subject_serializer.data}, status=status.HTTP_200_OK)
+
+        subject = Subject.objects.all()
         subject_serializer = SubjectSerializer(subject, many=True)
         return Response({"disciplina":subject_serializer.data}, status=status.HTTP_200_OK)
 
@@ -139,7 +142,7 @@ class ClassView(APIView):
 
 class ClassTeacherSubjectView(APIView):
     def get(self, request, format=None):
-        
+
         return
 
     def post(self, request, format=None):
@@ -152,9 +155,52 @@ class ClassTeacherSubjectView(APIView):
         class_teacher_subject_serialializer.save()
         return Response({"detail":"Turma atribuída ao professor.", "turma":class_teacher_subject_serialializer.data})
 
+class AnnouncementView(APIView):
+    def get(self, request, pk=None, format=None):
+        if pk:
+            announcement = get_object_or_404(Announcement, pk=pk)
+            announcement_serializer = AnnouncementSerializer(announcement)
+            return Response({"comunicado":announcement_serializer.data}, status=status.HTTP_200_OK)
 
+        announcement = Announcement.objects.all()
+        announcement_serializer = AnnouncementSerializer(announcement, many=True)
 
+        return Response({"comunicado":announcement_serializer.data}, status=status.HTTP_200_OK)
 
+    # title, body, user TODO: get user from authenticated request
+    def post(self, request, pk=None, format=None):
+        errors = check_fields(request, ["title", "body"])
+        #TODO: GET USER REQUEST.USER
+        if errors:
+            return Response(errors, status=status.HTTP_400_BAD_REQUEST)
+
+        announcement_serializer = AnnouncementSerializer(data=request.data)
+        announcement_serializer.is_valid(raise_exception=True)
+        announcement_serializer.save()
+        return Response({"detail":"Comunicado criado.", "comunicado":announcement_serializer.data})
+
+class CommentView(APIView):
+    def get(self, request, pk=None, format=None):
+        if pk:
+            comment = get_object_or_404(Comment, pk=pk)
+            comment_serializer = CommentSerializer(comment)
+            return Response({"comentario":comment_serializer.data}, status=status.HTTP_200_OK)
+
+        comment = Comment.objects.all()
+        comment_serializer = CommentSerializer(comment, many=True)
+
+        return Response({"comentario":comment_serializer.data}, status=status.HTTP_200_OK)
+
+    # body, announcement, user TODO: get user from authenticated request
+    def post(self, request, pk=None, format=None):
+        errors = check_fields(request, ["body", "announcement"])
+        if errors:
+            return Response(errors, status=status.HTTP_400_BAD_REQUEST)
+
+        comment_serializer = CommentSerializer(data=request.data)
+        comment_serializer.is_valid(raise_exception=True)
+        comment_serializer.save()
+        return Response({"detail":"Comentário criado.", "comentario":comment_serializer.data})
 
 
 

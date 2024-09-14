@@ -9,21 +9,35 @@ from rest_framework_simplejwt.views import (
 urlpatterns = [
     path("signup/", views.Signup.as_view(), name="signup"),
     path("login/", views.Login.as_view(), name="login"),
+
     path("student/", views.StudentView.as_view(), name="student"),
     path("student/<int:pk>/", views.StudentView.as_view(), name="student_id"),
+
     path("student-class/<int:class_pk>/", views.StudentClassView.as_view(), name="student_class"),
     path("student-class/<int:student_pk>/<int:class_pk>/", views.StudentClassView.as_view(), name="student_class"),
+
     path("teacher/", views.TeacherView.as_view(), name="teacher"),
     path("teacher/<int:pk>/", views.TeacherView.as_view(), name="teacher_id"),
+
     path("subject/", views.SubjectView.as_view(), name="subject"),
+    path("subject/<int:pk>/", views.SubjectView.as_view(), name="subject_id"),
+
     path("teacher_subject/", views.TeacherSubjectView.as_view(), name="teacher_subject"),
     path("teacher_subject/<int:pk>/", views.TeacherSubjectView.as_view(), name="teacher_subject_id"),
     path("teacher_subject/<int:teacher_pk>/<int:subject_pk>/", views.TeacherSubjectView.as_view(), name="teacher_subject"),
+
     path("class/", views.ClassView.as_view(), name="class"),
-    path("class/<int:pk>/", views.ClassView.as_view(), name="class"),
+    path("class/<int:pk>/", views.ClassView.as_view(), name="class_id"),
 
     # refactored to accept id in body instead of url pattern
     path("class-teacher-subject/", views.ClassTeacherSubjectView.as_view(), name="class_teacher_subject"),
+
+    path("announcement/", views.AnnouncementView.as_view(), name="announcement"),
+    path("announcement/<int:pk>/", views.AnnouncementView.as_view(), name="announcement_id"),
+
+    path("comment/", views.CommentView.as_view(), name="comment"),
+    path("comment/<int:pk>/", views.CommentView.as_view(), name="comment_id"),
+
 
     path("teste/", views.hello_world, name="teste"),
     path("api/token/", TokenObtainPairView.as_view(), name='token_obtain_pair'),

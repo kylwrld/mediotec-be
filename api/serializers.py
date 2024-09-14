@@ -88,3 +88,16 @@ class ClassTeacherSubjectSerializer(serializers.ModelSerializer):
         model = ClassTeacherSubject
         fields = ["id", "_class", "teacher_subject"]
         read_only_fields = ('id',)
+
+class CommentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Comment
+        fields = ["id", "body", "announcement", "user"]
+        read_only_fields = ("id",)
+
+class AnnouncementSerializer(serializers.ModelSerializer):
+    comments = CommentSerializer(read_only=True, many=True)
+    class Meta:
+        model = Announcement
+        fields = ["id", "title", "body", "user", "_class", "comments"]
+        read_only_fields = ("id",)
