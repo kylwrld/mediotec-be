@@ -4,13 +4,15 @@ from .models import *
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["name", "type"]
+        fields = ["id", "name", "type"]
+        read_only_fields = ('id',)
 
 # CREATE USER
 class SignupUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['name', 'email', 'password', 'type']
+        fields = ["id", 'name', 'email', 'password', 'type']
+        read_only_fields = ('id',)
 
     def create(self, validated_data):
         password = validated_data.pop('password')
@@ -31,7 +33,8 @@ class SignupUserSerializer(serializers.ModelSerializer):
 class LoginUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['email', 'password']
+        fields = ["id", 'email', 'password']
+        read_only_fields = ('id',)
 
 class StudentSerializer(serializers.ModelSerializer):
     class Meta:
@@ -44,15 +47,16 @@ class StudentClassSerializer(serializers.ModelSerializer):
     # student_id = serializers.IntegerField(write_only=True)
     class Meta:
         model = StudentClass
-        fields = ["student", "_class"]
+        fields = ["id", "student", "_class"]
+        read_only_fields = ('id',)
 
 class ClassSerializerAllStudents(serializers.ModelSerializer):
     students = StudentSerializer(read_only=True, many=True)
 
     class Meta:
         model = Class
-        fields = ["name", "degree", "students"]
-        read_only_fields = ("name", "degree", "students")
+        fields = ["id", "name", "degree", "students"]
+        read_only_fields = ("id", "name", "degree", "students")
 
 class TeacherSerializer(serializers.ModelSerializer):
     class Meta:
@@ -64,14 +68,23 @@ class TeacherSerializer(serializers.ModelSerializer):
 class SubjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subject
-        fields = ["name"]
+        fields = ["id", "name"]
+        read_only_fields = ('id',)
 
 class TeacherSubjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = TeacherSubject
-        fields = ["teacher", "subject"]
+        fields = ["id", "teacher", "subject"]
+        read_only_fields = ('id',)
 
 class ClassSerializer(serializers.ModelSerializer):
     class Meta:
         model = Class
-        fields = ["name", "degree"]
+        fields = ["id", "name", "degree"]
+        read_only_fields = ('id',)
+
+class ClassTeacherSubjectSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ClassTeacherSubject
+        fields = ["id", "_class", "teacher_subject"]
+        read_only_fields = ('id',)

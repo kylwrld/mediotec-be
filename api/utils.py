@@ -1,6 +1,6 @@
 from django.core.exceptions import ValidationError
 from functools import wraps
-
+from enum import Enum
 
 def check_fields(request, fields: list):
     errors = {}
@@ -11,13 +11,22 @@ def check_fields(request, fields: list):
 
 def validate_range(MIN: int, MAX: int):
     '''MAX is included'''
-    
+
     @wraps(validate_range)
     def inner_func(value):
         if value not in range(MIN, MAX+1):
             raise ValidationError(
-                _("%(value)s is not an even number"), # type: ignore
+                _("%(value)s is not in range"), # type: ignore
                 params={"value": value},
             )
 
     return inner_func
+
+class Day(Enum):
+    SEGUNDA = "SEGUNDA"
+    TERCA = "TERCA"
+    QUARTA = "QUARTA"
+    QUINTA = "QUINTA"
+    SEXTA = "SEXTA"
+    SABADO = "SABADO"
+    DOMINGO = "DOMINGO"

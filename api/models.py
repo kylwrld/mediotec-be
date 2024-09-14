@@ -149,11 +149,14 @@ class TeacherSubject(models.Model):
 class ClassTeacherSubject(models.Model):
     _class = models.ForeignKey(Class, on_delete=models.CASCADE)
     teacher_subject = models.ForeignKey(TeacherSubject, on_delete=models.CASCADE)
-    hour = models.IntegerField()
-    minutes = models.IntegerField()
 
     class Meta:
         unique_together = ('_class', 'teacher_subject')
+
+# class TimeSchedule(models.Model):
+#     class_teacher_subject = models.ForeignKey(ClassTeacherSubject, on_delete=models.CASCADE)
+#     hour = models.IntegerField(validators=[validate_range(7, 18)])
+#     minute = models.IntegerField(validators=[validate_range(0, 59)])
 
 
 # X | PROFESSOR/ADMIN + COMUNICADO

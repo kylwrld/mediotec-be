@@ -55,6 +55,7 @@ class StudentView(APIView):
         else:
             user = Student.objects.all()
 
+        # TODO: CHANGE TO RETURN IN EACH IF BLOCK. RIGHT NOW, IM RETURNING A LIST WITH ONE OBJECT IF PK IS NOT NONE
         student_serializer = StudentSerializer(user, many=True)
         return Response({"users":student_serializer.data}, status=status.HTTP_200_OK)
 
@@ -81,13 +82,19 @@ class TeacherView(APIView):
             user = Teacher.objects.filter(pk=pk)
         else:
             user = Teacher.objects.all()
-
+        # TODO: CHANGE TO RETURN IN EACH IF BLOCK. RIGHT NOW, IM RETURNING A LIST WITH ONE OBJECT IF PK IS NOT NONE
         teacher_serializer = TeacherSerializer(user, many=True)
         return Response({"users":teacher_serializer.data}, status=status.HTTP_200_OK)
 
 class SubjectView(APIView):
     def get(self, request, pk=None, format=None):
-        pass
+        if pk:
+            subject = get_object_or_404(Subject, pk=pk)
+        else:
+            subject = Subject.objects.all()
+            # TODO: CHANGE TO RETURN IN EACH IF BLOCK. RIGHT NOW, IM RETURNING A LIST WITH ONE OBJECT IF PK IS NOT NONE
+        subject_serializer = SubjectSerializer(subject, many=True)
+        return Response({"disciplina":subject_serializer.data}, status=status.HTTP_200_OK)
 
     # name
     def post(self, request, format=None):
@@ -97,6 +104,16 @@ class SubjectView(APIView):
         return Response({"detail":"Disciplina criada.", "subject":subject_serializer.data}, status=status.HTTP_201_CREATED)
 
 class TeacherSubjectView(APIView):
+    def get(self, request, pk=None, format=None):
+        if pk:
+            teacher_subject = get_object_or_404(TeacherSubject, pk=pk)
+            teacher_subject_serializer = TeacherSubjectSerializer(teacher_subject)
+            return Response({"teacher_subject":teacher_subject_serializer.data}, status=status.HTTP_200_OK)
+
+        teacher_subject = TeacherSubject.objects.all()
+        teacher_subject_serializer = TeacherSubjectSerializer(teacher_subject, many=True)
+        return Response({"teacher_subject":teacher_subject_serializer.data}, status=status.HTTP_200_OK)
+
     def post(self, request, teacher_pk, subject_pk, format=None):
         teacher_subject_serializer = TeacherSubjectSerializer(data={"teacher":teacher_pk, "subject":subject_pk})
         teacher_subject_serializer.is_valid(raise_exception=True)
@@ -114,19 +131,26 @@ class ClassView(APIView):
         class_serializer = ClassSerializer(_class, many=True)
         return Response({"turma":class_serializer.data}, status=status.HTTP_200_OK)
 
-
     def post(self, request, format=None):
         class_serializer = ClassSerializer(data=request.data)
         class_serializer.is_valid(raise_exception=True)
         class_serializer.save()
         return Response({"detail":"Turma criada.", "turma":class_serializer.data})
 
+class ClassTeacherSubjectView(APIView):
+    def get(self, request, format=None):
+        
+        return
 
+    def post(self, request, format=None):
+        errors = check_fields(request, ["_class", "teacher_subject"])
+        if errors:
+            return Response(errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-
-
-
+        class_teacher_subject_serialializer = ClassTeacherSubjectSerializer(data=request.data)
+        class_teacher_subject_serialializer.is_valid(raise_exception=True)
+        class_teacher_subject_serialializer.save()
+        return Response({"detail":"Turma atribuída ao professor.", "turma":class_teacher_subject_serialializer.data})
 
 
 

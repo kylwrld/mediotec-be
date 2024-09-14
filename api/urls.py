@@ -16,9 +16,14 @@ urlpatterns = [
     path("teacher/", views.TeacherView.as_view(), name="teacher"),
     path("teacher/<int:pk>/", views.TeacherView.as_view(), name="teacher_id"),
     path("subject/", views.SubjectView.as_view(), name="subject"),
+    path("teacher_subject/", views.TeacherSubjectView.as_view(), name="teacher_subject"),
+    path("teacher_subject/<int:pk>/", views.TeacherSubjectView.as_view(), name="teacher_subject_id"),
     path("teacher_subject/<int:teacher_pk>/<int:subject_pk>/", views.TeacherSubjectView.as_view(), name="teacher_subject"),
     path("class/", views.ClassView.as_view(), name="class"),
     path("class/<int:pk>/", views.ClassView.as_view(), name="class"),
+
+    # refactored to accept id in body instead of url pattern
+    path("class-teacher-subject/", views.ClassTeacherSubjectView.as_view(), name="class_teacher_subject"),
 
     path("teste/", views.hello_world, name="teste"),
     path("api/token/", TokenObtainPairView.as_view(), name='token_obtain_pair'),
