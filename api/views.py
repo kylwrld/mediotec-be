@@ -105,9 +105,15 @@ class TeacherSubjectView(APIView):
 
 class ClassView(APIView):
     def get(self, request, pk=None, format=None):
-         _class =  get_object_or_404(Class, pk=pk)
-         class_serializer = ClassSerializer(_class)
-         return Response({"turma":class_serializer.data}, status=status.HTTP_200_OK)
+        if pk:
+            _class =  get_object_or_404(Class, pk=pk)
+            class_serializer = ClassSerializer(_class)
+            return Response({"turma":class_serializer.data}, status=status.HTTP_200_OK)
+
+        _class = Class.objects.all()
+        class_serializer = ClassSerializer(_class, many=True)
+        return Response({"turma":class_serializer.data}, status=status.HTTP_200_OK)
+
 
     def post(self, request, format=None):
         class_serializer = ClassSerializer(data=request.data)
