@@ -28,13 +28,14 @@ urlpatterns = [
 
     path("teacher_subject/", views.TeacherSubjectView.as_view(), name="teacher_subject"),
     path("teacher_subject/<int:pk>/", views.TeacherSubjectView.as_view(), name="teacher_subject_id"),
-    path("teacher_subject/<int:teacher_pk>/<int:subject_pk>/", views.TeacherSubjectView.as_view(), name="teacher_subject"),
+    path("teacher_subject/", views.TeacherSubjectView.as_view(), name="teacher_subject"),
 
     path("class/", views.ClassView.as_view(), name="class"),
     path("class/<int:pk>/", views.ClassView.as_view(), name="class_id"),
 
     # refactored to accept id in body instead of url pattern
-    path("class-teacher-subject/", views.ClassTeacherSubjectView.as_view(), name="class_teacher_subject"),
+    path("class-year-teacher-subject/", views.ClassYearTeacherSubjectView.as_view(), name="class_year_teacher_subject"),
+    path("class-year-teacher-subject/<int:class_pk>/<int:year>/", views.ClassYearTeacherSubjectView.as_view(), name="class_year_teacher_subject"),
 
     path("announcement/", views.AnnouncementView.as_view(), name="announcement"),
     path("announcement/<int:pk>/", views.AnnouncementView.as_view(), name="announcement_id"),

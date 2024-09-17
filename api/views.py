@@ -81,7 +81,7 @@ class StudentClassView(APIView):
     # pass class_year or class + year
     def get(self, request, class_pk=None, year=timezone.now().year, format=None):
         class_year = get_object_or_404(ClassYear, _class_id=class_pk, year=year)
-        class_year_serializer = ClassYearSerializer(class_year)
+        class_year_serializer = ClassYearSerializerAllStudents(class_year)
         return Response(class_year_serializer.data, status=status.HTTP_200_OK)
 
     # student, _class
@@ -93,7 +93,8 @@ class StudentClassView(APIView):
 
         year = timezone.now().year
         request.data["year"] = year
-        class_year, ok = ClassYear.objects.get_or_create(_class_id=request.data["_class"], year=year)
+        _class = get_object_or_404(Class, pk=request.data["_class"])
+        class_year, _ = ClassYear.objects.get_or_create(_class=_class, year=year)
         request.data["class_year"] = class_year.id
         student_class_serializer = StudentClassSerializer(data=request.data)
         student_class_serializer.is_valid(raise_exception=True)
@@ -144,8 +145,9 @@ class TeacherSubjectView(APIView):
         teacher_subject_serializer = TeacherSubjectSerializer(teacher_subject, many=True)
         return Response({"teacher_subject":teacher_subject_serializer.data}, status=status.HTTP_200_OK)
 
-    def post(self, request, teacher_pk, subject_pk, format=None):
-        teacher_subject_serializer = TeacherSubjectSerializer(data={"teacher":teacher_pk, "subject":subject_pk})
+    # teacher, subject
+    def post(self, request, format=None):
+        teacher_subject_serializer = TeacherSubjectSerializer(data=request.data)
         teacher_subject_serializer.is_valid(raise_exception=True)
         teacher_subject_serializer.save()
         return Response({"detail":"Professor atribuído a disciplina", "teacher_disciplina":teacher_subject_serializer.data}, status=status.HTTP_201_CREATED)
@@ -170,17 +172,21 @@ class ClassView(APIView):
 
 
 
-class ClassTeacherSubjectView(APIView):
-    def get(self, request, format=None):
+class ClassYearTeacherSubjectView(APIView):
+    def get(self, request, class_pk=None, year=timezone.now().year, format=None):
+        class_year = get_object_or_404(ClassYear, _class_id=class_pk, year=year)
+        class_year_serializer = ClassYearSerializerAllTeachers(class_year)
+        return Response(class_year_serializer.data, status=status.HTTP_200_OK)
 
-        return
+    # _class, teacher_subject
+    def post(self, request, class_pk=None, year=timezone.now().year, format=None):
+        # errors = check_fields(request, ["_class", "teacher_subject"])
+        # if errors:
+        #     return Response(errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def post(self, request, format=None):
-        errors = check_fields(request, ["_class", "teacher_subject"])
-        if errors:
-            return Response(errors, status=status.HTTP_400_BAD_REQUEST)
-
-        class_teacher_subject_serialializer = ClassTeacherSubjectSerializer(data=request.data)
+        class_year = get_object_or_404(ClassYear, _class_id=request.data["_class"], year=timezone.now().year)
+        request.data["class_year"] = class_year.id
+        class_teacher_subject_serialializer = ClassYearTeacherSubjectSerializer(data=request.data)
         class_teacher_subject_serialializer.is_valid(raise_exception=True)
         class_teacher_subject_serialializer.save()
         return Response({"detail":"Turma atribuída ao professor.", "turma":class_teacher_subject_serialializer.data})

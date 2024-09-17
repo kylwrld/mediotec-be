@@ -41,6 +41,15 @@ class SignupStudentSerializer(serializers.ModelSerializer):
         fields = ["id", "name", "email", "password", "parents"]
         read_only_fields = ("id",)
 
+    def create(self, validated_data):
+        password = validated_data.pop("password")
+        instance = Student(**validated_data)
+        if password is not None:
+            instance.set_password(password)
+        instance.save()
+        return instance
+
+
 # LOGIN USER
 class LoginUserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -83,11 +92,22 @@ class SubjectSerializer(serializers.ModelSerializer):
         fields = ["id", "name"]
         read_only_fields = ("id",)
 
+
 class TeacherSubjectSerializer(serializers.ModelSerializer):
+    teacher_field = TeacherSerializer(read_only=True, source="teacher")
+    class Meta:
+        model = TeacherSubject
+        fields = ["id", "teacher", "subject", "teacher_field"]
+        read_only_fields = ("id",)
+
+class TeacherSubjectSerializerReadOnly(serializers.ModelSerializer):
+    teacher = TeacherSerializer(read_only=True)
+    subject = SubjectSerializer(read_only=True)
     class Meta:
         model = TeacherSubject
         fields = ["id", "teacher", "subject"]
         read_only_fields = ("id",)
+
 
 class ClassSerializer(serializers.ModelSerializer):
     class Meta:
@@ -96,17 +116,31 @@ class ClassSerializer(serializers.ModelSerializer):
         read_only_fields = ("id",)
 
 class ClassYearSerializer(serializers.ModelSerializer):
-    turma = ClassSerializer(read_only=True, many=True)
-    students = StudentSerializer(read_only=True, many=True)
     class Meta:
         model = ClassYear
-        fields = ["id", "_class", "year", "students", "turma"]
+        fields = ["id", "_class", "year"]
+        read_only_fields = ("id",)
+
+class ClassYearSerializerAllStudents(serializers.ModelSerializer):
+    students = StudentSerializer(read_only=True, many=True)
+
+    class Meta:
+        model = ClassYear
+        fields = ["id", "_class", "year", "students"]
         read_only_fields = ("id", "students")
 
-class ClassTeacherSubjectSerializer(serializers.ModelSerializer):
+class ClassYearSerializerAllTeachers(serializers.ModelSerializer):
+    teacher_subject = TeacherSubjectSerializerReadOnly(read_only=True, many=True)
+
     class Meta:
-        model = ClassTeacherSubject
-        fields = ["id", "_class", "teacher_subject"]
+        model = ClassYear
+        fields = ["id", "_class", "year", "teacher_subject"]
+        read_only_fields = ("id", "teacher_subject")
+
+class ClassYearTeacherSubjectSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ClassYearTeacherSubject
+        fields = ["id", "class_year", "teacher_subject"]
         read_only_fields = ("id",)
 
 class CommentSerializer(serializers.ModelSerializer):

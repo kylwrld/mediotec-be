@@ -46,6 +46,8 @@ class Student(User):
 # class StudentProfile(models.Model):
 #     user = models.OneToOneField(User, on_delete=models.CASCADE)
 
+class Subject(models.Model):
+    name = models.CharField(max_length=70)
 
 class TeacherManager(BaseUserManager):
     def get_queryset(self, *args, **kwargs) -> models.QuerySet:
@@ -57,6 +59,14 @@ class Teacher(User):
 
     class Meta:
         proxy = True
+
+# PROFESSOR + DISCIPLINA
+class TeacherSubject(models.Model):
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = [['teacher', 'subject']]
 
 # class TeacherProfile(models.Model):
 #     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -82,6 +92,7 @@ class ClassYear(models.Model):
     _class = models.ForeignKey(Class, related_name="class_years", on_delete=models.CASCADE)
     year = models.PositiveIntegerField()
     students = models.ManyToManyField(Student, related_name="class_year", through="StudentClass")
+    teacher_subject = models.ManyToManyField(TeacherSubject, related_name="class_year", through="ClassYearTeacherSubject")
 
     class Meta:
         unique_together = [['_class', 'year']]
@@ -89,13 +100,10 @@ class ClassYear(models.Model):
 class StudentClass(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
     class_year = models.ForeignKey(ClassYear, on_delete=models.CASCADE)
-    
 
     class Meta:
         unique_together = [['student', 'class_year']]
 
-class Subject(models.Model):
-    name = models.CharField(max_length=70)
 
 
 class Announcement(models.Model):
@@ -157,17 +165,8 @@ class Parent(models.Model):
     student = models.ForeignKey(User, related_name="parents", on_delete=models.CASCADE)
 
 
-# PROFESSOR + DISCIPLINA
-class TeacherSubject(models.Model):
-    teacher = models.ForeignKey(User, on_delete=models.CASCADE)
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
-
-    class Meta:
-        unique_together = [['teacher', 'subject']]
-
-
-# TURMA + (PROFESSOR + DISCIPLINA)
-class ClassTeacherSubject(models.Model):
+# (TURMA + ANO) + (PROFESSOR + DISCIPLINA)
+class ClassYearTeacherSubject(models.Model):
     class_year = models.ForeignKey(ClassYear, on_delete=models.CASCADE)
     teacher_subject = models.ForeignKey(TeacherSubject, on_delete=models.CASCADE)
 
