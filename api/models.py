@@ -2,6 +2,8 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from enum import Enum
 from .utils import validate_range
+from django.core.validators import MaxValueValidator, MinValueValidator
+
 
 class User(AbstractUser):
     name = models.CharField(max_length=70, null=False, blank=False)
@@ -24,8 +26,10 @@ class User(AbstractUser):
             self.type = self.base_type
             return super().save(*args, **kwargs)
 
+
 # class AdminProfile(models.Model):
 #     user = models.OneToOneField(User, on_delete=models.CASCADE)
+
 
 class StudentManager(BaseUserManager):
     def get_queryset(self, *args, **kwargs) -> models.QuerySet:
@@ -38,8 +42,10 @@ class Student(User):
     class Meta:
         proxy = True
 
+
 # class StudentProfile(models.Model):
 #     user = models.OneToOneField(User, on_delete=models.CASCADE)
+
 
 class TeacherManager(BaseUserManager):
     def get_queryset(self, *args, **kwargs) -> models.QuerySet:
@@ -54,6 +60,7 @@ class Teacher(User):
 
 # class TeacherProfile(models.Model):
 #     user = models.OneToOneField(User, on_delete=models.CASCADE)
+
 
 class AdminManager(BaseUserManager):
     def get_queryset(self, *args, **kwargs) -> models.QuerySet:
@@ -70,21 +77,39 @@ class Admin(User):
 class Class(models.Model):
     name = models.CharField(max_length=50)
     degree = models.IntegerField(validators=[validate_range(1, 3)])
-    students = models.ManyToManyField(Student, related_name="_class", through="StudentClass")
+
+class ClassYear(models.Model):
+    _class = models.ForeignKey(Class, related_name="class_years", on_delete=models.CASCADE)
+    year = models.PositiveIntegerField()
+    students = models.ManyToManyField(Student, related_name="class_year", through="StudentClass")
+
+    class Meta:
+        unique_together = [['_class', 'year']]
+
+class StudentClass(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    class_year = models.ForeignKey(ClassYear, on_delete=models.CASCADE)
+    
+
+    class Meta:
+        unique_together = [['student', 'class_year']]
 
 class Subject(models.Model):
     name = models.CharField(max_length=70)
+
 
 class Announcement(models.Model):
     title = models.CharField(max_length=70)
     body = models.CharField(max_length=2000)
     user = models.ForeignKey(User, related_name="announcements", on_delete=models.DO_NOTHING)
-    _class = models.ForeignKey(Class, related_name="announcemets", on_delete=models.CASCADE, null=True)
+    class_year = models.ForeignKey(ClassYear, related_name="announcemets", on_delete=models.CASCADE, null=True)
+
 
 class Comment(models.Model):
     body = models.CharField(max_length=1000)
     announcement = models.ForeignKey(Announcement, related_name="comments", on_delete=models.CASCADE)
     user = models.ForeignKey(User, related_name="comments", on_delete=models.DO_NOTHING)
+
 
 class EGrade(Enum):
     NANA = "NA"
@@ -120,23 +145,16 @@ class Grade(models.Model):
 
     grade = models.CharField(max_length=2, choices=Grades.choices)
     type = models.CharField(max_length=9, choices=Types.choices)
-    degree = models.IntegerField(validators=[validate_range(1, 3)])
-    unit = models.IntegerField(validators=[validate_range(1, 3)])
+    degree = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(3)])
+    unit = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(3)])
     student = models.ForeignKey(User, related_name="grades", on_delete=models.DO_NOTHING)
     subject = models.ForeignKey(Subject, related_name="grades", on_delete=models.DO_NOTHING)
+
 
 class Parent(models.Model):
     name = models.CharField(max_length=70)
     cpf = models.CharField(max_length=14)
     student = models.ForeignKey(User, related_name="parents", on_delete=models.CASCADE)
-
-# ALUNO + TURMA
-class StudentClass(models.Model):
-    student = models.ForeignKey(Student, on_delete=models.CASCADE)
-    _class = models.ForeignKey(Class, on_delete=models.CASCADE)
-
-    class Meta:
-        unique_together = [['student', '_class']]
 
 
 # PROFESSOR + DISCIPLINA
@@ -145,15 +163,18 @@ class TeacherSubject(models.Model):
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
 
     class Meta:
-        unique_together = ('teacher', 'subject',)
+        unique_together = [['teacher', 'subject']]
+
 
 # TURMA + (PROFESSOR + DISCIPLINA)
 class ClassTeacherSubject(models.Model):
-    _class = models.ForeignKey(Class, on_delete=models.CASCADE)
+    class_year = models.ForeignKey(ClassYear, on_delete=models.CASCADE)
     teacher_subject = models.ForeignKey(TeacherSubject, on_delete=models.CASCADE)
 
     class Meta:
-        unique_together = ('_class', 'teacher_subject')
+        unique_together = [['class_year', 'teacher_subject']]
+
+
 
 # class TimeSchedule(models.Model):
 #     class_teacher_subject = models.ForeignKey(ClassTeacherSubject, on_delete=models.CASCADE)
