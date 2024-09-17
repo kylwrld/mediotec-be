@@ -91,7 +91,6 @@ class StudentClassView(APIView):
         # if not class_pk:
         #     return Response({"detail":"O id da turma é obrigatório"}, status=status.HTTP_400_BAD_REQUEST)
 
-        year = timezone.now().year
         request.data["year"] = year
         _class = get_object_or_404(Class, pk=request.data["_class"])
         class_year, _ = ClassYear.objects.get_or_create(_class=_class, year=year)
@@ -262,7 +261,5 @@ class CommentView(APIView):
 
 @api_view(['GET'])
 def hello_world(request):
-    student = Student.objects.first().parents
-    print(student)
-    print(Grade.get_final_grade("A", "NA"))
+    print(Class.objects.first().class_years.all())
     return Response({"message": "W"})

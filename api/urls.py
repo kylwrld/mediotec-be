@@ -14,6 +14,7 @@ urlpatterns = [
     path("signup/", views.Signup.as_view(), name="signup"),
     path("login/", views.Login.as_view(), name="login"),
 
+    # refactored to accept id in body instead of url pattern
     path("student/", views.StudentView.as_view(), name="student"),
     path("student/<int:pk>/", views.StudentView.as_view(), name="student_id"),
 
@@ -22,6 +23,7 @@ urlpatterns = [
 
     path("teacher/", views.TeacherView.as_view(), name="teacher"),
     path("teacher/<int:pk>/", views.TeacherView.as_view(), name="teacher_id"),
+    # TODO: TEACHER SIGNUP VIEW
 
     path("subject/", views.SubjectView.as_view(), name="subject"),
     path("subject/<int:pk>/", views.SubjectView.as_view(), name="subject_id"),
@@ -33,7 +35,6 @@ urlpatterns = [
     path("class/", views.ClassView.as_view(), name="class"),
     path("class/<int:pk>/", views.ClassView.as_view(), name="class_id"),
 
-    # refactored to accept id in body instead of url pattern
     path("class-year-teacher-subject/", views.ClassYearTeacherSubjectView.as_view(), name="class_year_teacher_subject"),
     path("class-year-teacher-subject/<int:class_pk>/<int:year>/", views.ClassYearTeacherSubjectView.as_view(), name="class_year_teacher_subject"),
 

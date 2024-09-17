@@ -71,13 +71,14 @@ class StudentClassSerializer(serializers.ModelSerializer):
         fields = ["id", "student", "class_year"]
         read_only_fields = ("id",)
 
-class ClassSerializerAllStudents(serializers.ModelSerializer):
-    students = StudentSerializer(read_only=True, many=True)
+# NOT BEING USED
+# class ClassSerializerAllStudents(serializers.ModelSerializer):
+#     students = StudentSerializer(read_only=True, many=True)
 
-    class Meta:
-        model = Class
-        fields = ["id", "name", "degree", "students"]
-        read_only_fields = ("id", "name", "degree", "students")
+#     class Meta:
+#         model = Class
+#         fields = ["id", "name", "degree", "students"]
+#         read_only_fields = ("id", "name", "degree", "students")
 
 class TeacherSerializer(serializers.ModelSerializer):
     class Meta:
