@@ -1,9 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from enum import Enum
-from .utils import validate_range
+from .utils import *
 from django.core.validators import MaxValueValidator, MinValueValidator
-
+from django.db.models import Q
 
 class User(AbstractUser):
     name = models.CharField(max_length=70, null=False, blank=False)
@@ -26,6 +26,19 @@ class User(AbstractUser):
             self.type = self.base_type
             return super().save(*args, **kwargs)
 
+
+class NotStudentManager(BaseUserManager):
+    cr_admin = Q(type__contains="ADMIN")
+    cr_teacher = Q(type__contains="TEACHER")
+    def get_queryset(self, *args, **kwargs) -> models.QuerySet:
+        return super().get_queryset(*args, **kwargs).filter(NotStudentManager.cr_admin | NotStudentManager.cr_teacher)
+
+class NotStudent(User):
+    base_type = User.Types.ADMIN
+    objects = NotStudentManager()
+
+    class Meta:
+        proxy = True
 
 # class AdminProfile(models.Model):
 #     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -109,7 +122,8 @@ class StudentClass(models.Model):
 class Announcement(models.Model):
     title = models.CharField(max_length=70)
     body = models.CharField(max_length=2000)
-    user = models.ForeignKey(User, related_name="announcements", on_delete=models.DO_NOTHING)
+    fixed = models.BooleanField(null=True, blank=True)
+    user = models.ForeignKey(NotStudent, related_name="announcements", on_delete=models.DO_NOTHING)
     class_year = models.ForeignKey(ClassYear, related_name="announcemets", on_delete=models.CASCADE, null=True)
 
 
@@ -118,17 +132,6 @@ class Comment(models.Model):
     announcement = models.ForeignKey(Announcement, related_name="comments", on_delete=models.CASCADE)
     user = models.ForeignKey(User, related_name="comments", on_delete=models.DO_NOTHING)
 
-
-class EGrade(Enum):
-    NANA = "NA"
-    NAPA = "NA"
-    PANA = "NA"
-    NAA = "NA"
-    ANA = "NA"
-    PAPA = "PA"
-    PAA = "A"
-    APA = "A"
-    AA = "A"
 
 # ALUNO + CONCEITO
 class Grade(models.Model):
@@ -153,17 +156,22 @@ class Grade(models.Model):
 
     grade = models.CharField(max_length=2, choices=Grades.choices)
     type = models.CharField(max_length=9, choices=Types.choices)
+    year = models.PositiveIntegerField()
     degree = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(3)])
     unit = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(3)])
     student = models.ForeignKey(User, related_name="grades", on_delete=models.DO_NOTHING)
-    subject = models.ForeignKey(Subject, related_name="grades", on_delete=models.DO_NOTHING)
+    teacher_subject = models.ForeignKey(TeacherSubject, related_name="grades", on_delete=models.DO_NOTHING)
 
 
 class Parent(models.Model):
     name = models.CharField(max_length=70)
-    cpf = models.CharField(max_length=14)
+    cpf = models.CharField(max_length=14, unique=True)
     student = models.ForeignKey(User, related_name="parents", on_delete=models.CASCADE)
 
+class Phone(models.Model):
+    ddd = models.CharField(max_length=2)
+    number = models.CharField(max_length=9)
+    parent = models.ForeignKey(Parent, on_delete=models.CASCADE)
 
 # (TURMA + ANO) + (PROFESSOR + DISCIPLINA)
 class ClassYearTeacherSubject(models.Model):
@@ -174,11 +182,18 @@ class ClassYearTeacherSubject(models.Model):
         unique_together = [['class_year', 'teacher_subject']]
 
 
+# SEGUNDA | TURMA 1A | 7h | 0m  | PROFESSOR 1 | DISCIPLINA 1
+# SEGUNDA | TURMA 2A | 7h | 0m  | PROFESSOR 2 | DISCIPLINA 1
+# SEGUNDA | TURMA 2A | 7h | 50m | PROFESSOR 2 | DISCIPLINA 1
 
-# class TimeSchedule(models.Model):
-#     class_teacher_subject = models.ForeignKey(ClassTeacherSubject, on_delete=models.CASCADE)
-#     hour = models.IntegerField(validators=[validate_range(7, 18)])
-#     minute = models.IntegerField(validators=[validate_range(0, 59)])
+class TimeSchedule(models.Model):
+    day = models.CharField(max_length=7)
+    hour = models.IntegerField(validators=[MinValueValidator(7), MaxValueValidator(18)])
+    minute = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(59)])
+    class_year_teacher_subject = models.ForeignKey(ClassYearTeacherSubject, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = [['day', 'hour', 'minute', 'class_year_teacher_subject']]
 
 
 # X | PROFESSOR/ADMIN + COMUNICADO

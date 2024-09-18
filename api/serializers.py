@@ -152,7 +152,8 @@ class CommentSerializer(serializers.ModelSerializer):
 
 class AnnouncementSerializer(serializers.ModelSerializer):
     comments = CommentSerializer(read_only=True, many=True)
+    
     class Meta:
         model = Announcement
-        fields = ["id", "title", "body", "user", "_class", "comments"]
+        fields = ["id", "title", "body", "fixed", "user", "class_year", "comments"]
         read_only_fields = ("id",)

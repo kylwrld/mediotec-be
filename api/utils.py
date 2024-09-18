@@ -22,6 +22,17 @@ def validate_range(MIN: int, MAX: int):
 
     return inner_func
 
+class EGrade(Enum):
+    NANA = "NA"
+    NAPA = "NA"
+    PANA = "NA"
+    NAA = "NA"
+    ANA = "NA"
+    PAPA = "PA"
+    PAA = "A"
+    APA = "A"
+    AA = "A"
+
 class Day(Enum):
     SEGUNDA = "SEGUNDA"
     TERCA = "TERCA"

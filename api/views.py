@@ -86,10 +86,8 @@ class StudentClassView(APIView):
 
     # student, _class
     def post(self, request, class_pk=None, year=timezone.now().year, format=None):
-        # if not student_pk:
-        #     return Response({"detail":"O id do estudante é obrigatório"}, status=status.HTTP_400_BAD_REQUEST)
-        # if not class_pk:
-        #     return Response({"detail":"O id da turma é obrigatório"}, status=status.HTTP_400_BAD_REQUEST)
+        if year < timezone.now().year:
+            return Response({"detail":"Você não pode criar uma turma no passado."}, status=status.HTTP_400_BAD_REQUEST)
 
         request.data["year"] = year
         _class = get_object_or_404(Class, pk=request.data["_class"])
@@ -203,7 +201,7 @@ class AnnouncementView(APIView):
 
         return Response({"comunicado":announcement_serializer.data}, status=status.HTTP_200_OK)
 
-    # title, body, user TODO: get user from authenticated request
+    # title, body, fixed, user TODO: get user from authenticated request
     def post(self, request, pk=None, format=None):
         errors = check_fields(request, ["title", "body"])
         #TODO: GET USER REQUEST.USER
@@ -261,5 +259,5 @@ class CommentView(APIView):
 
 @api_view(['GET'])
 def hello_world(request):
-    print(Class.objects.first().class_years.all())
+    print(NotStudent.objects.all())
     return Response({"message": "W"})
