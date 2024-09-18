@@ -10,7 +10,9 @@ class UserSerializer(serializers.ModelSerializer):
 class ParentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Parent
-        fields = ["id", "name", "student"]
+        fields = ["id", "name", "cpf", "student"]
+        read_only_fields = ("id", "student")
+
 
 # CREATE USER
 class SignupUserSerializer(serializers.ModelSerializer):
@@ -152,7 +154,7 @@ class CommentSerializer(serializers.ModelSerializer):
 
 class AnnouncementSerializer(serializers.ModelSerializer):
     comments = CommentSerializer(read_only=True, many=True)
-    
+
     class Meta:
         model = Announcement
         fields = ["id", "title", "body", "fixed", "user", "class_year", "comments"]

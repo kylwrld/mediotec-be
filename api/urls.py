@@ -44,6 +44,8 @@ urlpatterns = [
     path("comment/", views.CommentView.as_view(), name="comment"),
     path("comment/<int:pk>/", views.CommentView.as_view(), name="comment_id"),
 
+    path("parent/", views.ParentView.as_view(), name="parent"),
+    path("parent/<int:student_pk>/", views.ParentView.as_view(), name="parent_id"),
 
     path("teste/", views.hello_world, name="teste"),
 

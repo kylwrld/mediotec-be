@@ -30,7 +30,38 @@ class Signup(APIView):
         }
         return Response(data=data, status=status.HTTP_201_CREATED)
 
+from django.db import transaction
+from django.db.utils import IntegrityError
+
 class SignupStudent(APIView):
+    # name, email, password,
+    # parent {name, cpf}
+    # TODO: add parent phone
+    def post(self, request, format=None):
+        parent_data = request.data.pop("parent", False)
+        if not parent_data:
+            return Response({"detail":"Campo parent é obrigatório."}, status=status.HTTP_400_BAD_REQUEST)
+
+        student_serializer = SignupStudentSerializer(data=request.data)
+        parent_serializer = ParentSerializer(data=parent_data)
+        student_serializer.is_valid(raise_exception=True)
+        parent_serializer.is_valid(raise_exception=True)
+
+        try:
+            with transaction.atomic():
+                student: Student = student_serializer.save()
+                parent_serializer.save(student=student)
+        except IntegrityError:
+            return Response({"detail":"Erro ao persistir no banco de dados."}, status=status.HTTP_400_BAD_REQUEST)
+
+        refresh = RefreshToken.for_user(student)
+        data = {
+            "refresh":str(refresh),
+            "access":str(refresh.access_token),
+        }
+        return Response(data=data, status=status.HTTP_201_CREATED)
+
+class SignupNotStudent(APIView):
     # name, email, password, parents
     def post(self, request, format=None):
         student_serializer = SignupStudentSerializer(data=request.data)
@@ -64,6 +95,23 @@ class Login(APIView):
         }
         return Response(data=data, status=status.HTTP_201_CREATED)
 
+class ParentView(APIView):
+    def get(self, request, student_pk=None, format=None):
+        parents = get_object_or_404(Student, pk=student_pk).parents.all()
+        parents_serializer = ParentSerializer(parents, many=True)
+        return Response(parents_serializer.data)
+
+    # name, cpf, student
+    def post(self, request, student_pk=None, format=None):
+        student_pk = request.data.pop("student", False)
+        if not student_pk:
+            return Response({"detail":"O campo student é obrigatório."}, status=status.HTTP_400_BAD_REQUEST)
+
+        parent_serializer = ParentSerializer(data=request.data)
+        parent_serializer.is_valid(raise_exception=True)
+        student = get_object_or_404(Student, pk=student_pk)
+        parent_serializer.save(student=student)
+        return Response({"detail":"Parent criado e atribuído."}, status=status.HTTP_201_CREATED)
 
 class StudentView(APIView):
     def get(self, request, pk=None, format=None):
@@ -165,7 +213,7 @@ class ClassView(APIView):
         class_serializer = ClassSerializer(data=request.data)
         class_serializer.is_valid(raise_exception=True)
         class_serializer.save()
-        return Response({"detail":"Turma criada.", "turma":class_serializer.data})
+        return Response({"detail":"Turma criada.", "turma":class_serializer.data}, status=status.HTTP_201_CREATED)
 
 
 
@@ -177,9 +225,9 @@ class ClassYearTeacherSubjectView(APIView):
 
     # _class, teacher_subject
     def post(self, request, class_pk=None, year=timezone.now().year, format=None):
-        # errors = check_fields(request, ["_class", "teacher_subject"])
-        # if errors:
-        #     return Response(errors, status=status.HTTP_400_BAD_REQUEST)
+        errors = check_fields(request, ["_class", "teacher_subject"])
+        if errors:
+            return Response(errors, status=status.HTTP_400_BAD_REQUEST)
 
         class_year = get_object_or_404(ClassYear, _class_id=request.data["_class"], year=timezone.now().year)
         request.data["class_year"] = class_year.id
