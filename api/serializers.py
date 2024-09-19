@@ -126,7 +126,6 @@ class ClassYearSerializer(serializers.ModelSerializer):
 
 class ClassYearSerializerAllStudents(serializers.ModelSerializer):
     students = StudentSerializer(read_only=True, many=True)
-
     class Meta:
         model = ClassYear
         fields = ["id", "_class", "year", "students"]
@@ -134,7 +133,6 @@ class ClassYearSerializerAllStudents(serializers.ModelSerializer):
 
 class ClassYearSerializerAllTeachers(serializers.ModelSerializer):
     teacher_subject = TeacherSubjectSerializerReadOnly(read_only=True, many=True)
-
     class Meta:
         model = ClassYear
         fields = ["id", "_class", "year", "teacher_subject"]
@@ -159,3 +157,24 @@ class AnnouncementSerializer(serializers.ModelSerializer):
         model = Announcement
         fields = ["id", "title", "body", "fixed", "user", "class_year", "comments"]
         read_only_fields = ("id",)
+
+class GradeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Grade
+        fields = ["id", "grade", "type", "year", "degree", "unit", "student", "teacher_subject"]
+        read_only_fields = ("id",)
+
+    # grade = models.CharField(max_length=2, choices=Grades.choices)
+    # type = models.CharField(max_length=9, choices=Types.choices)
+    # year = models.PositiveIntegerField()
+    # degree = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(3)])
+    # unit = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(3)])
+    # student = models.ForeignKey(User, related_name="grades", on_delete=models.DO_NOTHING)
+    # teacher_subject = models.ForeignKey(TeacherSubject, related_name="grades", on_delete=models.DO_NOTHING)
+    # created_at = models.DateTimeField(auto_now_add=True)
+    # updated_at = models.DateTimeField(auto_now=True)
+
+class TimeScheduleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TimeSchedule
+        fields = ["day"]

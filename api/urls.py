@@ -47,6 +47,10 @@ urlpatterns = [
     path("parent/", views.ParentView.as_view(), name="parent"),
     path("parent/<int:student_pk>/", views.ParentView.as_view(), name="parent_id"),
 
+    path("grade/", views.GradeView.as_view(), name="grade"),
+    path("grade/<int:student_pk>/<int:year>/", views.GradeView.as_view(), name="grade_id"),
+
+
     path("teste/", views.hello_world, name="teste"),
 
     path("api/token/", TokenObtainPairView.as_view(), name='token_obtain_pair'),

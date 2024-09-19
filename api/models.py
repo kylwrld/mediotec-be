@@ -161,6 +161,12 @@ class Grade(models.Model):
     unit = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(3)])
     student = models.ForeignKey(User, related_name="grades", on_delete=models.DO_NOTHING)
     teacher_subject = models.ForeignKey(TeacherSubject, related_name="grades", on_delete=models.DO_NOTHING)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = [['student', 'year', 'degree', 'unit', 'type', 'teacher_subject']]
+
 
 
 class Parent(models.Model):
@@ -187,13 +193,45 @@ class ClassYearTeacherSubject(models.Model):
 # SEGUNDA | TURMA 2A | 7h | 50m | PROFESSOR 2 | DISCIPLINA 1
 
 class TimeSchedule(models.Model):
-    day = models.CharField(max_length=7)
+    class Days(models.TextChoices):
+        SEGUNDA = "SEGUNDA", "SEGUNDA"
+        TERCA = "TERCA", "TERCA"
+        QUARTA = "QUARTA", "QUARTA"
+        QUINTA = "QUINTA", "QUINTA"
+        SEXTA = "SEXTA", "SEXTA"
+        SABADO = "SABADO", "SABADO"
+        DOMINGO = "DOMINGO", "DOMINGO"
+
+    class Hours(models.Choices):
+        M1 = (7, 0)
+        M2 = (7, 50)
+        M3 = (8, 40)
+        M4 = (10, 0)
+        M5 = (10, 50)
+        M6 = (11, 40)
+        M7 = (12, 30)
+
+        T1 = (13, 40)
+        T2 = (14, 30)
+        T3 = (15, 20)
+        T4 = (16, 40)
+        T5 = (17, 30)
+        T6 = (18, 20)
+        T7 = (19, 10)
+
+    day = models.CharField(max_length=7, choices=Days.choices)
     hour = models.IntegerField(validators=[MinValueValidator(7), MaxValueValidator(18)])
     minute = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(59)])
     class_year_teacher_subject = models.ForeignKey(ClassYearTeacherSubject, on_delete=models.CASCADE)
 
     class Meta:
         unique_together = [['day', 'hour', 'minute', 'class_year_teacher_subject']]
+
+class Attendance(models.Model):
+    user = models.ForeignKey(Student, related_name="attendances", on_delete=models.DO_NOTHING)
+    class_year_teacher_subject = models.ForeignKey(ClassYearTeacherSubject, on_delete=models.DO_NOTHING)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
 
 # X | PROFESSOR/ADMIN + COMUNICADO

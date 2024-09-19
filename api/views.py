@@ -286,7 +286,19 @@ class CommentView(APIView):
         return Response({"detail":"Comentário criado.", "comentario":comment_serializer.data})
 
 
+class GradeView(APIView):
+    def get(self, request, student_pk=None, year=timezone.now().year, format=None):
+        grades = Grade.objects.filter(student=student_pk, year=year)
+        grades_serializer = GradeSerializer(grades, many=True)
+        return Response(grades_serializer.data, status=status.HTTP_200_OK)
 
+    # grade, type, year, degree, unit, student, teacher_subject
+    def post(self, request, student_pk=None, year=timezone.now().year, format=None):
+        request.data["year"] = timezone.now().year
+        grade_serializer = GradeSerializer(data=request.data)
+        grade_serializer.is_valid(raise_exception=True)
+        grade_serializer.save()
+        return Response({"detail":"Nota atribuída.", "grade":grade_serializer.data}, status=status.HTTP_201_CREATED)
 
 
 
@@ -307,5 +319,10 @@ class CommentView(APIView):
 
 @api_view(['GET'])
 def hello_world(request):
-    print(NotStudent.objects.all())
-    return Response({"message": "W"})
+    test = {}
+    names = TimeSchedule.Hours.names
+    values = TimeSchedule.Hours.values
+    for i in range(len(names)):
+        test[names[i]] = values[i]
+
+    return Response({"message": test})
