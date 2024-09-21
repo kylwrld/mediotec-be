@@ -103,6 +103,8 @@ class Admin(User):
 class Class(models.Model):
     name = models.CharField(max_length=50)
     degree = models.IntegerField(validators=[validate_range(1, 3)])
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
 class ClassYear(models.Model):
     _class = models.ForeignKey(Class, related_name="class_years", on_delete=models.CASCADE)
@@ -128,13 +130,15 @@ class Announcement(models.Model):
     fixed = models.BooleanField(null=True, blank=True)
     user = models.ForeignKey(NotStudent, related_name="announcements", on_delete=models.DO_NOTHING)
     class_year = models.ForeignKey(ClassYear, related_name="announcemets", on_delete=models.CASCADE, null=True)
-
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
 class Comment(models.Model):
     body = models.CharField(max_length=1000)
     announcement = models.ForeignKey(Announcement, related_name="comments", on_delete=models.CASCADE)
     user = models.ForeignKey(User, related_name="comments", on_delete=models.DO_NOTHING)
-
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
 # ALUNO + CONCEITO
 class Grade(models.Model):

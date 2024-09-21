@@ -146,6 +146,10 @@ class StudentClassView(APIView):
 
     # student, _class
     def post(self, request, class_pk=None, year=timezone.now().year, format=None):
+        errors = check_fields(request, ["student", "_class"])
+        if errors:
+            return Response(errors, status=status.HTTP_400_BAD_REQUEST)
+            
         if year < timezone.now().year:
             return Response({"detail":"Você não pode criar uma turma no passado."}, status=status.HTTP_400_BAD_REQUEST)
 

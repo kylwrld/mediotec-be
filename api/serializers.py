@@ -169,7 +169,7 @@ class AnnouncementSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Announcement
-        fields = ["id", "title", "body", "fixed", "user", "class_year", "comments"]
+        fields = ["id", "title", "body", "fixed", "user", "class_year", "comments", "created_at"]
         read_only_fields = ("id",)
 
 class GradeSerializer(serializers.ModelSerializer):
