@@ -15,6 +15,9 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, Toke
 
 from .utils import *
 from django.utils import timezone
+from django.db import transaction
+from django.db.utils import IntegrityError
+from itertools import islice
 
 # TODO: Mudar rota para user/student/ user/teacher/ user/admin/
 class Signup(APIView):
@@ -30,28 +33,36 @@ class Signup(APIView):
         }
         return Response(data=data, status=status.HTTP_201_CREATED)
 
-from django.db import transaction
-from django.db.utils import IntegrityError
 
 class SignupStudent(APIView):
     # name, email, password,
     # parent {name, cpf}
-    # TODO: add parent phone
+    # phone [{ddd, number}, ...]
     def post(self, request, format=None):
         parent_data = request.data.pop("parent", False)
+        phone_data = request.data.pop("phone", False)
         if not parent_data:
             return Response({"detail":"Campo parent é obrigatório."}, status=status.HTTP_400_BAD_REQUEST)
+        if not phone_data:
+            return Response({"detail":"Campo phone é obrigatório."}, status=status.HTTP_400_BAD_REQUEST)
 
         student_serializer = SignupStudentSerializer(data=request.data)
         parent_serializer = ParentSerializer(data=parent_data)
+        phone_serializer = PhoneSerializer(data=phone_data, many=True)
         student_serializer.is_valid(raise_exception=True)
         parent_serializer.is_valid(raise_exception=True)
+        phone_serializer.is_valid(raise_exception=True)
 
         try:
             with transaction.atomic():
                 student: Student = student_serializer.save()
-                parent_serializer.save(student=student)
-        except IntegrityError:
+                parent: Parent = parent_serializer.save(student=student)
+                objs = (Phone(ddd=p["ddd"], number=p["number"], parent=parent) for p in phone_serializer.data)
+                batch_size = len(phone_serializer.data)
+                batch = list(islice(objs, batch_size))
+                Phone.objects.bulk_create(batch, batch_size)
+
+        except:
             return Response({"detail":"Erro ao persistir no banco de dados."}, status=status.HTTP_400_BAD_REQUEST)
 
         refresh = RefreshToken.for_user(student)
@@ -59,6 +70,7 @@ class SignupStudent(APIView):
             "refresh":str(refresh),
             "access":str(refresh.access_token),
         }
+
         return Response(data=data, status=status.HTTP_201_CREATED)
 
 class SignupNotStudent(APIView):
@@ -117,12 +129,12 @@ class StudentView(APIView):
     def get(self, request, pk=None, format=None):
         if pk:
             student = get_object_or_404(Student, pk=pk)
-            student_serializer = StudentSerializer(student)
-            return Response({"users":student_serializer.data}, status=status.HTTP_200_OK)
+            student_serializer = StudentParentSerializer(student)
+            return Response(student_serializer.data, status=status.HTTP_200_OK)
 
         student = Student.objects.all()
         student_serializer = StudentSerializer(student, many=True)
-        return Response({"users":student_serializer.data}, status=status.HTTP_200_OK)
+        return Response({"students":student_serializer.data}, status=status.HTTP_200_OK)
 
 
 class StudentClassView(APIView):
@@ -153,11 +165,11 @@ class TeacherView(APIView):
             teacher = get_object_or_404(Teacher, pk=pk)
             teacher_serializer = TeacherSerializer(teacher)
             print(teacher, teacher_serializer.data)
-            return Response({"teacher":teacher_serializer.data}, status=status.HTTP_200_OK)
+            return Response(teacher_serializer.data, status=status.HTTP_200_OK)
 
         teacher = Teacher.objects.all()
         teacher_serializer = TeacherSerializer(teacher, many=True)
-        return Response({"teacher":teacher_serializer.data}, status=status.HTTP_200_OK)
+        return Response({"teachers":teacher_serializer.data}, status=status.HTTP_200_OK)
 
 
 class SubjectView(APIView):
@@ -165,11 +177,11 @@ class SubjectView(APIView):
         if pk:
             subject = get_object_or_404(Subject, pk=pk)
             subject_serializer = SubjectSerializer(subject)
-            return Response({"disciplina":subject_serializer.data}, status=status.HTTP_200_OK)
+            return Response(subject_serializer.data, status=status.HTTP_200_OK)
 
         subject = Subject.objects.all()
         subject_serializer = SubjectSerializer(subject, many=True)
-        return Response({"disciplina":subject_serializer.data}, status=status.HTTP_200_OK)
+        return Response({"subjects":subject_serializer.data}, status=status.HTTP_200_OK)
 
     # name
     def post(self, request, format=None):
@@ -184,11 +196,11 @@ class TeacherSubjectView(APIView):
         if pk:
             teacher_subject = get_object_or_404(TeacherSubject, pk=pk)
             teacher_subject_serializer = TeacherSubjectSerializer(teacher_subject)
-            return Response({"teacher_subject":teacher_subject_serializer.data}, status=status.HTTP_200_OK)
+            return Response(teacher_subject_serializer.data, status=status.HTTP_200_OK)
 
         teacher_subject = TeacherSubject.objects.all()
         teacher_subject_serializer = TeacherSubjectSerializer(teacher_subject, many=True)
-        return Response({"teacher_subject":teacher_subject_serializer.data}, status=status.HTTP_200_OK)
+        return Response({"teacher_subjects":teacher_subject_serializer.data}, status=status.HTTP_200_OK)
 
     # teacher, subject
     def post(self, request, format=None):
@@ -203,11 +215,11 @@ class ClassView(APIView):
         if pk:
             _class =  get_object_or_404(Class, pk=pk)
             class_serializer = ClassSerializer(_class)
-            return Response({"turma":class_serializer.data}, status=status.HTTP_200_OK)
+            return Response(class_serializer.data, status=status.HTTP_200_OK)
 
         _class = Class.objects.all()
         class_serializer = ClassSerializer(_class, many=True)
-        return Response({"turma":class_serializer.data}, status=status.HTTP_200_OK)
+        return Response({"classes":class_serializer.data}, status=status.HTTP_200_OK)
 
     def post(self, request, format=None):
         class_serializer = ClassSerializer(data=request.data)
@@ -242,12 +254,12 @@ class AnnouncementView(APIView):
         if pk:
             announcement = get_object_or_404(Announcement, pk=pk)
             announcement_serializer = AnnouncementSerializer(announcement)
-            return Response({"comunicado":announcement_serializer.data}, status=status.HTTP_200_OK)
+            return Response(announcement_serializer.data, status=status.HTTP_200_OK)
 
         announcement = Announcement.objects.all()
         announcement_serializer = AnnouncementSerializer(announcement, many=True)
 
-        return Response({"comunicado":announcement_serializer.data}, status=status.HTTP_200_OK)
+        return Response({"announcements":announcement_serializer.data}, status=status.HTTP_200_OK)
 
     # title, body, fixed, user TODO: get user from authenticated request
     def post(self, request, pk=None, format=None):
@@ -267,12 +279,12 @@ class CommentView(APIView):
         if pk:
             comment = get_object_or_404(Comment, pk=pk)
             comment_serializer = CommentSerializer(comment)
-            return Response({"comentario":comment_serializer.data}, status=status.HTTP_200_OK)
+            return Response(comment_serializer.data, status=status.HTTP_200_OK)
 
         comment = Comment.objects.all()
         comment_serializer = CommentSerializer(comment, many=True)
 
-        return Response({"comentario":comment_serializer.data}, status=status.HTTP_200_OK)
+        return Response({"comments":comment_serializer.data}, status=status.HTTP_200_OK)
 
     # body, announcement, user TODO: get user from authenticated request
     def post(self, request, pk=None, format=None):
@@ -290,7 +302,7 @@ class GradeView(APIView):
     def get(self, request, student_pk=None, year=timezone.now().year, format=None):
         grades = Grade.objects.filter(student=student_pk, year=year)
         grades_serializer = GradeSerializer(grades, many=True)
-        return Response(grades_serializer.data, status=status.HTTP_200_OK)
+        return Response({"grades":grades_serializer.data}, status=status.HTTP_200_OK)
 
     # grade, type, year, degree, unit, student, teacher_subject
     def post(self, request, student_pk=None, year=timezone.now().year, format=None):

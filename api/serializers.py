@@ -7,11 +7,18 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ["id", "name", "type"]
         read_only_fields = ("id",)
 
+class PhoneSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Phone
+        fields = ["id", "ddd", "number", "parent"]
+        read_only_fields = ("id", "parent")
+
 class ParentSerializer(serializers.ModelSerializer):
+    phones = PhoneSerializer(read_only=True, many=True)
     class Meta:
         model = Parent
-        fields = ["id", "name", "cpf", "student"]
-        read_only_fields = ("id", "student")
+        fields = ["id", "name", "cpf", "student", "phones"]
+        read_only_fields = ("id", "student", "phones")
 
 
 # CREATE USER
@@ -40,7 +47,7 @@ class SignupStudentSerializer(serializers.ModelSerializer):
     parents = ParentSerializer(read_only=True, many=True)
     class Meta:
         model = Student
-        fields = ["id", "name", "email", "password", "parents"]
+        fields = ["id", "name", "email", "password", "birth_date", "parents"]
         read_only_fields = ("id",)
 
     def create(self, validated_data):
@@ -64,6 +71,13 @@ class StudentSerializer(serializers.ModelSerializer):
         model = Student
         # need to add Class
         fields = ["id", "name", "email", "type"]
+        read_only_fields = ("id", "name", "email", "type")
+
+class StudentParentSerializer(serializers.ModelSerializer):
+    parents = ParentSerializer(read_only=True, many=True)
+    class Meta:
+        model = Student
+        fields = ["id", "name", "email", "type", "parents"]
         read_only_fields = ("id", "name", "email", "type")
 
 class StudentClassSerializer(serializers.ModelSerializer):
