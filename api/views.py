@@ -15,9 +15,37 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, Toke
 
 from .utils import *
 from django.utils import timezone
-from django.db import transaction
+from django.db import transaction, connection, reset_queries
 from django.db.utils import IntegrityError
 from itertools import islice
+
+class CustomRefreshToken(RefreshToken):
+    @classmethod
+    def for_user(cls, user):
+        token = cls()
+        token['name'] = user.name
+        token['type'] = user.type
+
+        if api_settings.CHECK_REVOKE_TOKEN:
+            token[api_settings.REVOKE_TOKEN_CLAIM] = get_md5_hash_password(
+                user.password
+            )
+
+        return token
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    token_class = CustomRefreshToken
+
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+        token['name'] = user.name
+        token['type'] = user.type
+
+        return token
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
 
 # TODO: Mudar rota para user/student/ user/teacher/ user/admin/
 class Signup(APIView):
@@ -26,7 +54,7 @@ class Signup(APIView):
         user_serializer.is_valid(raise_exception=True)
         user: User = user_serializer.save()
 
-        refresh = RefreshToken.for_user(user)
+        refresh = CustomRefreshToken.for_user(user)
         data = {
             "refresh":str(refresh),
             "access":str(refresh.access_token),
@@ -65,7 +93,7 @@ class SignupStudent(APIView):
         except:
             return Response({"detail":"Erro ao persistir no banco de dados."}, status=status.HTTP_400_BAD_REQUEST)
 
-        refresh = RefreshToken.for_user(student)
+        refresh = CustomRefreshToken.for_user(student)
         data = {
             "refresh":str(refresh),
             "access":str(refresh.access_token),
@@ -80,7 +108,7 @@ class SignupNotStudent(APIView):
         student_serializer.is_valid(raise_exception=True)
         student: Student = student_serializer.save()
 
-        refresh = RefreshToken.for_user(student)
+        refresh = CustomRefreshToken.for_user(student)
         data = {
             "refresh":str(refresh),
             "access":str(refresh.access_token),
@@ -100,7 +128,7 @@ class Login(APIView):
         if not correct_password:
             return Response({"detail":"Not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        refresh = RefreshToken.for_user(user)
+        refresh = CustomRefreshToken.for_user(user)
         data = {
             "refresh":str(refresh),
             "access":str(refresh.access_token),
@@ -149,7 +177,7 @@ class StudentClassView(APIView):
         errors = check_fields(request, ["student", "_class"])
         if errors:
             return Response(errors, status=status.HTTP_400_BAD_REQUEST)
-            
+
         if year < timezone.now().year:
             return Response({"detail":"Você não pode criar uma turma no passado."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -229,7 +257,7 @@ class ClassView(APIView):
         class_serializer = ClassSerializer(data=request.data)
         class_serializer.is_valid(raise_exception=True)
         class_serializer.save()
-        return Response({"detail":"Turma criada.", "turma":class_serializer.data}, status=status.HTTP_201_CREATED)
+        return Response({"detail":"Turma criada.", "class":class_serializer.data}, status=status.HTTP_201_CREATED)
 
 
 
@@ -257,11 +285,11 @@ class AnnouncementView(APIView):
     def get(self, request, pk=None, format=None):
         if pk:
             announcement = get_object_or_404(Announcement, pk=pk)
-            announcement_serializer = AnnouncementSerializer(announcement)
+            announcement_serializer = AnnouncementSerializerReadOnly(announcement)
             return Response(announcement_serializer.data, status=status.HTTP_200_OK)
 
         announcement = Announcement.objects.all()
-        announcement_serializer = AnnouncementSerializer(announcement, many=True)
+        announcement_serializer = AnnouncementSerializerReadOnly(announcement, many=True)
 
         return Response({"announcements":announcement_serializer.data}, status=status.HTTP_200_OK)
 
@@ -303,10 +331,31 @@ class CommentView(APIView):
 
 
 class GradeView(APIView):
+    # TODO: Please change
     def get(self, request, student_pk=None, year=timezone.now().year, format=None):
-        grades = Grade.objects.filter(student=student_pk, year=year)
-        grades_serializer = GradeSerializer(grades, many=True)
-        return Response({"grades":grades_serializer.data}, status=status.HTTP_200_OK)
+            grades = Grade.objects.filter(student=student_pk, year=year)
+            grades_serializer = AllGradesTableSerializer(grades, many=True)
+            data = [{"unit":1, "grades":{"AV1":"", "AV2":"", "NOA":""}, "subject":""},
+                    {"unit":2, "grades":{"AV1":"", "AV2":"", "NOA":""}, "subject":""},
+                    {"unit":3, "grades":{"AV1":"", "AV2":"", "NOA":""}, "subject":""}]
+            for grade in grades_serializer.data:
+                if grade["unit"] == 1:
+                    data[0]["grades"][grade["type"]] = grade["grade"]
+                    data[0]["subject"] = grade["subject"]
+                if grade["unit"] == 2:
+                    data[1]["grades"][grade["type"]] = grade["grade"]
+                    data[1]["subject"] = grade["subject"]
+                if grade["unit"] == 3:
+                    data[2]["grades"][grade["type"]] = grade["grade"]
+                    data[2]["subject"] = grade["subject"]
+            # unit_1 = Grade.objects.filter(student=student_pk, year=year, unit=1)
+            # unit_2 = Grade.objects.filter(student=student_pk, year=year, unit=2)
+            # unit_3 = Grade.objects.filter(student=student_pk, year=year, unit=3)
+            # unit_1_serializer = AllGradesTableSerializer(unit_1, many=True)
+            # unit_2_serializer = AllGradesTableSerializer(unit_2, many=True)
+            # unit_3_serializer = AllGradesTableSerializer(unit_3, many=True)
+            # data = [{"unit":1, "grades":unit_1_serializer.data}, {"unit":2, "grades":unit_2_serializer.data}, {"unit":3, "grades":unit_3_serializer.data}]
+            return Response({"grades":data, "test":grades_serializer.data}, status=status.HTTP_200_OK)
 
     # grade, type, year, degree, unit, student, teacher_subject
     def post(self, request, student_pk=None, year=timezone.now().year, format=None):

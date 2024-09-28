@@ -101,8 +101,13 @@ class Admin(User):
 
 
 class Class(models.Model):
+    class Types(models.TextChoices):
+        INFORMATICA = "INFORMATICA", "INFORMATICA"
+        LOGISTICA = "LOGISTICA", "LOGISTICA"
+
     name = models.CharField(max_length=50)
     degree = models.IntegerField(validators=[validate_range(1, 3)])
+    type = models.CharField(max_length=11, choices=Types.choices)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -116,12 +121,11 @@ class ClassYear(models.Model):
         unique_together = [['_class', 'year']]
 
 class StudentClass(models.Model):
-    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    student = models.ForeignKey(Student, related_name="student_class", on_delete=models.CASCADE)
     class_year = models.ForeignKey(ClassYear, on_delete=models.CASCADE)
 
     class Meta:
         unique_together = [['student', 'class_year']]
-
 
 
 class Announcement(models.Model):
