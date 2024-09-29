@@ -167,7 +167,7 @@ class StudentView(APIView):
 
 
 class StudentClassView(APIView):
-    # pass class_year or class + year
+    # class + year
     def get(self, request, class_pk=None, year=timezone.now().year, format=None):
         class_year = get_object_or_404(ClassYear, _class_id=class_pk, year=year)
         class_year_serializer = ClassYearSerializerAllStudents(class_year)
@@ -182,14 +182,30 @@ class StudentClassView(APIView):
         if year < timezone.now().year:
             return Response({"detail":"Você não pode criar uma turma no passado."}, status=status.HTTP_400_BAD_REQUEST)
 
-        request.data["year"] = year
         _class = get_object_or_404(Class, pk=request.data["_class"])
         class_year, _ = ClassYear.objects.get_or_create(_class=_class, year=year)
-        request.data["class_year"] = class_year.id
-        student_class_serializer = StudentClassSerializer(data=request.data)
-        student_class_serializer.is_valid(raise_exception=True)
-        student_class_serializer.save()
-        return Response({"detail":"Aluno atribuído a turma", "student_class":student_class_serializer.data}, status=status.HTTP_201_CREATED)
+
+        if isinstance(request.data["student"], int):
+            request.data["year"] = year
+            request.data["class_year"] = class_year.id
+            student_class_serializer = StudentClassSerializer(data=request.data)
+            student_class_serializer.is_valid(raise_exception=True)
+            student_class_serializer.save()
+            return Response({"detail":"Aluno atribuído a turma.", "student_class":student_class_serializer.data}, status=status.HTTP_201_CREATED)
+
+        if isinstance(request.data["student"], list):
+            students = request.data["student"]
+            try:
+                with transaction.atomic():
+                    objs = (StudentClass(student_id=student, class_year=class_year) for student in students)
+                    batch_size = len(students)
+                    batch = list(islice(objs, batch_size))
+                    student_class = StudentClass.objects.bulk_create(batch, batch_size)
+                    student_class_serializer = StudentClassSerializer(student_class, many=True)
+                    return Response({"detail":"Alunos atribuídos a turma.", "student_class":student_class_serializer.data}, status=status.HTTP_201_CREATED)
+            except:
+                return Response({"detail":"Erro ao persistir no banco de dados. Tenha certeza de que os ID's são válidos."}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"detail":"ID do estudante inválido."}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class TeacherView(APIView):
