@@ -35,6 +35,9 @@ urlpatterns = [
     path("class/", views.ClassView.as_view(), name="class"),
     path("class/<int:pk>/", views.ClassView.as_view(), name="class_id"),
 
+    path("class-year/", views.ClassYearView.as_view(), name="class"),
+    path("class-year/<int:pk>/", views.ClassYearView.as_view(), name="class_id"),
+
     path("class-year-teacher-subject/", views.ClassYearTeacherSubjectView.as_view(), name="class_year_teacher_subject"),
     path("class-year-teacher-subject/<int:class_pk>/<int:year>/", views.ClassYearTeacherSubjectView.as_view(), name="class_year_teacher_subject"),
 

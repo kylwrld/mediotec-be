@@ -131,8 +131,8 @@ class StudentClass(models.Model):
 class Announcement(models.Model):
     title = models.CharField(max_length=70)
     body = models.CharField(max_length=2000)
-    fixed = models.BooleanField(null=True, blank=True)
-    user = models.ForeignKey(NotStudent, related_name="announcements", on_delete=models.DO_NOTHING)
+    fixed = models.BooleanField(default=False, null=True, blank=True)
+    user = models.ForeignKey(NotStudent, related_name="announcements", on_delete=models.DO_NOTHING, blank=True)
     class_year = models.ForeignKey(ClassYear, related_name="announcemets", on_delete=models.CASCADE, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

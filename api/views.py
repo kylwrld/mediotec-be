@@ -48,6 +48,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
 # TODO: Mudar rota para user/student/ user/teacher/ user/admin/
+# name, email, type, password
 class Signup(APIView):
     def post(self, request, format=None):
         user_serializer = SignupUserSerializer(data=request.data)
@@ -102,7 +103,7 @@ class SignupStudent(APIView):
         return Response(data=data, status=status.HTTP_201_CREATED)
 
 class SignupNotStudent(APIView):
-    # name, email, password, parents
+    # name, email, password
     def post(self, request, format=None):
         student_serializer = SignupStudentSerializer(data=request.data)
         student_serializer.is_valid(raise_exception=True)
@@ -256,10 +257,21 @@ class ClassView(APIView):
     def post(self, request, format=None):
         class_serializer = ClassSerializer(data=request.data)
         class_serializer.is_valid(raise_exception=True)
-        class_serializer.save()
-        return Response({"detail":"Turma criada.", "class":class_serializer.data}, status=status.HTTP_201_CREATED)
+
+        with transaction.atomic():
+            _class = class_serializer.save()
+            class_year_serializer = ClassYearSerializer(data={"_class":_class.pk, "year":timezone.now().year})
+            class_year_serializer.is_valid(raise_exception=True)
+            class_year_serializer.save()
 
 
+        return Response({"detail":"Turma criada.", "class":class_year_serializer.data}, status=status.HTTP_201_CREATED)
+
+class ClassYearView(APIView):
+    def get(self, request, pk=None, format=None):
+        class_year = ClassYear.objects.filter(year=timezone.now().year)
+        class_year_serializer = ClassYearSerializerReadOnly(class_year, many=True)
+        return Response({"class_years": class_year_serializer.data}, status=status.HTTP_200_OK)
 
 class ClassYearTeacherSubjectView(APIView):
     def get(self, request, class_pk=None, year=timezone.now().year, format=None):
@@ -288,21 +300,24 @@ class AnnouncementView(APIView):
             announcement_serializer = AnnouncementSerializerReadOnly(announcement)
             return Response(announcement_serializer.data, status=status.HTTP_200_OK)
 
-        announcement = Announcement.objects.all()
+        announcement = Announcement.objects.all().order_by("-created_at", '-fixed')
         announcement_serializer = AnnouncementSerializerReadOnly(announcement, many=True)
 
         return Response({"announcements":announcement_serializer.data}, status=status.HTTP_200_OK)
 
-    # title, body, fixed, user TODO: get user from authenticated request
+    # title, body, fixed TODO: get user from authenticated request
     def post(self, request, pk=None, format=None):
         errors = check_fields(request, ["title", "body"])
         #TODO: GET USER REQUEST.USER
         if errors:
             return Response(errors, status=status.HTTP_400_BAD_REQUEST)
 
+        # if request.data.get("_class", None):
+        #     class_year = get_object_or_404(ClassYear, _class=request.data[])
         announcement_serializer = AnnouncementSerializer(data=request.data)
         announcement_serializer.is_valid(raise_exception=True)
-        announcement_serializer.save()
+        user = get_object_or_404(User, pk=30)
+        announcement_serializer.save(user=user)
         return Response({"detail":"Comunicado criado.", "comunicado":announcement_serializer.data})
 
 

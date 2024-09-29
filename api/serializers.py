@@ -158,7 +158,16 @@ class TeacherSubjectSerializerReadOnly(serializers.ModelSerializer):
         fields = ["id", "teacher", "subject"]
         read_only_fields = ("id",)
 
+class ClassYearSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ClassYear
+        fields = ["_class", "year"]
 
+class ClassYearSerializerReadOnly(serializers.ModelSerializer):
+    _class = ClassSerializer()
+    class Meta:
+        model = ClassYear
+        fields = ["_class", "year"]
 
 class ClassYearSerializerAllStudents(serializers.ModelSerializer):
     students = StudentSerializer(read_only=True, many=True)
@@ -192,7 +201,7 @@ class AnnouncementSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Announcement
-        fields = ["id", "title", "body", "fixed", "user", "class_year", "comments", "created_at"]
+        fields = ["id", "title", "body", "fixed", "class_year", "comments", "created_at"]
         read_only_fields = ("id",)
 
 class AnnouncementSerializerReadOnly(serializers.ModelSerializer):
