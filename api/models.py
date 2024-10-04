@@ -105,9 +105,14 @@ class Class(models.Model):
         INFORMATICA = "INFORMATICA", "INFORMATICA"
         LOGISTICA = "LOGISTICA", "LOGISTICA"
 
-    name = models.CharField(max_length=50)
+    class Shifts(models.TextChoices):
+        MANHA = "MANHA", "MANHA"
+        TARDE = "TARDE", "TARDE"
+
+    name = models.CharField(max_length=50, unique=True)
     degree = models.IntegerField(validators=[validate_range(1, 3)])
     type = models.CharField(max_length=11, choices=Types.choices)
+    shift = models.CharField(max_length=5, choices=Shifts.choices)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

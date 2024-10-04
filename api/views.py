@@ -316,7 +316,7 @@ class AnnouncementView(APIView):
             announcement_serializer = AnnouncementSerializerReadOnly(announcement)
             return Response(announcement_serializer.data, status=status.HTTP_200_OK)
 
-        announcement = Announcement.objects.all().order_by("-created_at", '-fixed')
+        announcement = Announcement.objects.all().order_by("-fixed", '-created_at')
         announcement_serializer = AnnouncementSerializerReadOnly(announcement, many=True)
 
         return Response({"announcements":announcement_serializer.data}, status=status.HTTP_200_OK)
@@ -364,21 +364,7 @@ class CommentView(APIView):
 class GradeView(APIView):
     # TODO: Please change
     def get(self, request, student_pk=None, year=timezone.now().year, format=None):
-            grades = Grade.objects.filter(student=student_pk, year=year)
-            grades_serializer = AllGradesTableSerializer(grades, many=True)
-            data = [{"unit":1, "grades":{"AV1":"", "AV2":"", "NOA":""}, "subject":""},
-                    {"unit":2, "grades":{"AV1":"", "AV2":"", "NOA":""}, "subject":""},
-                    {"unit":3, "grades":{"AV1":"", "AV2":"", "NOA":""}, "subject":""}]
-            for grade in grades_serializer.data:
-                if grade["unit"] == 1:
-                    data[0]["grades"][grade["type"]] = grade["grade"]
-                    data[0]["subject"] = grade["subject"]
-                if grade["unit"] == 2:
-                    data[1]["grades"][grade["type"]] = grade["grade"]
-                    data[1]["subject"] = grade["subject"]
-                if grade["unit"] == 3:
-                    data[2]["grades"][grade["type"]] = grade["grade"]
-                    data[2]["subject"] = grade["subject"]
+
             # unit_1 = Grade.objects.filter(student=student_pk, year=year, unit=1)
             # unit_2 = Grade.objects.filter(student=student_pk, year=year, unit=2)
             # unit_3 = Grade.objects.filter(student=student_pk, year=year, unit=3)
@@ -386,7 +372,7 @@ class GradeView(APIView):
             # unit_2_serializer = AllGradesTableSerializer(unit_2, many=True)
             # unit_3_serializer = AllGradesTableSerializer(unit_3, many=True)
             # data = [{"unit":1, "grades":unit_1_serializer.data}, {"unit":2, "grades":unit_2_serializer.data}, {"unit":3, "grades":unit_3_serializer.data}]
-            return Response({"grades":data, "test":grades_serializer.data}, status=status.HTTP_200_OK)
+            return Response({"grades":{}, "test":{}}, status=status.HTTP_200_OK)
 
     # grade, type, year, degree, unit, student, teacher_subject
     def post(self, request, student_pk=None, year=timezone.now().year, format=None):
