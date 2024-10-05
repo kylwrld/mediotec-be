@@ -332,7 +332,7 @@ class AnnouncementView(APIView):
         #     class_year = get_object_or_404(ClassYear, _class=request.data[])
         announcement_serializer = AnnouncementSerializer(data=request.data)
         announcement_serializer.is_valid(raise_exception=True)
-        user = get_object_or_404(User, pk=30)
+        user = get_object_or_404(User, pk=3)
         announcement_serializer.save(user=user)
         return Response({"detail":"Comunicado criado.", "comunicado":announcement_serializer.data})
 
@@ -383,6 +383,12 @@ class GradeView(APIView):
         return Response({"detail":"Nota atribuída.", "grade":grade_serializer.data}, status=status.HTTP_201_CREATED)
 
 
+@api_view(['GET'])
+def TeacherAllSubjects(request, pk=None):
+    teacher_subject = TeacherSubject.objects.filter(teacher_id=pk)
+    teacher_subject_serializer = TeacherSubjectSerializerReadOnly(teacher_subject, many=True)
+    return Response({"teacher": teacher_subject_serializer.data})
+
 
 
 
@@ -401,10 +407,9 @@ class GradeView(APIView):
 
 @api_view(['GET'])
 def hello_world(request):
-    test = {}
-    names = TimeSchedule.Hours.names
-    values = TimeSchedule.Hours.values
-    for i in range(len(names)):
-        test[names[i]] = values[i]
+    teacher_subject = Teacher.objects.first().teachersubject_set.all()
+    teacher_subject_serializer = TeacherSubjectSerializerReadOnly(teacher_subject, many=True)
+    print(Teacher.objects.first().teachersubject_set.all())
+    print(Teacher.objects.first().subjects.all())
 
-    return Response({"message": test})
+    return Response({"message": teacher_subject_serializer.data})

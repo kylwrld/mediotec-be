@@ -18,11 +18,12 @@ urlpatterns = [
     path("student/", views.StudentView.as_view(), name="student"),
     path("student/<int:pk>/", views.StudentView.as_view(), name="student_id"),
 
-    path("student-class/", views.StudentClassView.as_view(), name="student_class"),
-    path("student-class/<int:class_pk>/<int:year>/", views.StudentClassView.as_view(), name="student_class"),
+    path("student_class/", views.StudentClassView.as_view(), name="student_class"),
+    path("student_class/<int:class_pk>/<int:year>/", views.StudentClassView.as_view(), name="student_class"),
 
     path("teacher/", views.TeacherView.as_view(), name="teacher"),
     path("teacher/<int:pk>/", views.TeacherView.as_view(), name="teacher_id"),
+    path("teacher/<int:pk>/subjects/", views.TeacherAllSubjects, name="teacher_subjects"),
     # TODO: TEACHER SIGNUP VIEW
 
     path("subject/", views.SubjectView.as_view(), name="subject"),
@@ -35,11 +36,11 @@ urlpatterns = [
     path("class/", views.ClassView.as_view(), name="class"),
     path("class/<int:pk>/", views.ClassView.as_view(), name="class_id"),
 
-    path("class-year/", views.ClassYearView.as_view(), name="class"),
-    path("class-year/<int:pk>/", views.ClassYearView.as_view(), name="class_id"),
+    path("class_year/", views.ClassYearView.as_view(), name="class"),
+    path("class_year/<int:pk>/", views.ClassYearView.as_view(), name="class_id"),
 
-    path("class-year-teacher-subject/", views.ClassYearTeacherSubjectView.as_view(), name="class_year_teacher_subject"),
-    path("class-year-teacher-subject/<int:class_pk>/<int:year>/", views.ClassYearTeacherSubjectView.as_view(), name="class_year_teacher_subject"),
+    path("class_year_teacher_subject/", views.ClassYearTeacherSubjectView.as_view(), name="class_year_teacher_subject"),
+    path("class_year_teacher_subject/<int:class_pk>/<int:year>/", views.ClassYearTeacherSubjectView.as_view(), name="class_year_teacher_subject"),
 
     path("announcement/", views.AnnouncementView.as_view(), name="announcement"),
     path("announcement/<int:pk>/", views.AnnouncementView.as_view(), name="announcement_id"),

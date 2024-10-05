@@ -58,12 +58,9 @@ class Student(User):
     class Meta:
         proxy = True
 
-
 # class StudentProfile(models.Model):
 #     user = models.OneToOneField(User, on_delete=models.CASCADE)
 
-class Subject(models.Model):
-    name = models.CharField(max_length=70)
 
 class TeacherManager(BaseUserManager):
     def get_queryset(self, *args, **kwargs) -> models.QuerySet:
@@ -75,6 +72,10 @@ class Teacher(User):
 
     class Meta:
         proxy = True
+
+class Subject(models.Model):
+    name = models.CharField(max_length=70)
+    teachers = models.ManyToManyField(Teacher, related_name="subjects", through="TeacherSubject")
 
 # PROFESSOR + DISCIPLINA
 class TeacherSubject(models.Model):

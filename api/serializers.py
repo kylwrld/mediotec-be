@@ -76,7 +76,7 @@ class LoginUserSerializer(serializers.ModelSerializer):
 class ClassSerializer(serializers.ModelSerializer):
     class Meta:
         model = Class
-        fields = ["id", "name", "degree", "type"]
+        fields = ["id", "name", "degree", "type", "shift"]
         read_only_fields = ("id",)
 
 class ClassYearSerializer(serializers.ModelSerializer):
@@ -129,18 +129,20 @@ class StudentParentSerializer(serializers.ModelSerializer):
 #         fields = ["id", "name", "degree", "students"]
 #         read_only_fields = ("id", "name", "degree", "students")
 
+class SubjectSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subject
+        fields = ["id", "name"]
+        read_only_fields = ("id",)
+
 class TeacherSerializer(serializers.ModelSerializer):
+    # subjects = SubjectSerializer(read_only=True, many=True)
     class Meta:
         model = Teacher
         # TODO: need to add Class
         fields = ["id", "name", "email", "type"]
         read_only_fields = ("id", "name", "email", "type")
 
-class SubjectSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Subject
-        fields = ["id", "name"]
-        read_only_fields = ("id",)
 
 
 class TeacherSubjectSerializer(serializers.ModelSerializer):
