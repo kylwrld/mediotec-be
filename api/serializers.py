@@ -216,9 +216,16 @@ class AnnouncementSerializerReadOnly(serializers.ModelSerializer):
         read_only_fields = ("id", "user")
 
 class GradeSerializer(serializers.ModelSerializer):
+    teacher_subject = TeacherSubjectSerializerReadOnly(read_only=True)
     class Meta:
         model = Grade
-        fields = ["id", "grade", "type", "year", "degree", "unit", "student", "teacher_subject"]
+        fields = [
+            "id", "av1_1", "av2_1", "noa_1",
+            "av1_2", "av2_2", "noa_2",
+            "av1_3", "av2_3", "noa_3",
+            "year", "degree", "unit",
+            "student", "teacher_subject"]
+
         read_only_fields = ("id",)
 
 class AllGradesTableSerializer(serializers.ModelSerializer):

@@ -103,12 +103,12 @@ class Admin(User):
 
 class Class(models.Model):
     class Types(models.TextChoices):
-        INFORMATICA = "INFORMATICA", "INFORMATICA"
-        LOGISTICA = "LOGISTICA", "LOGISTICA"
+        INFORMATICA = "Informática", "Informática"
+        LOGISTICA = "Logística", "Logística"
 
     class Shifts(models.TextChoices):
-        MANHA = "MANHA", "MANHA"
-        TARDE = "TARDE", "TARDE"
+        MANHA = "Manhã", "Manhã"
+        TARDE = "Tarde", "Tarde"
 
     name = models.CharField(max_length=50, unique=True)
     degree = models.IntegerField(validators=[validate_range(1, 3)])
@@ -157,12 +157,6 @@ class Grade(models.Model):
         PA = "PA", "PA"
         A  = "A", "A"
 
-    class Types(models.TextChoices):
-        AV1 = "AV1", "AV1"
-        AV2 = "AV2", "AV2"
-        NOA  = "NOA", "NOA"
-        NOA_FINAL = "NOA_FINAL", "NOA_FINAL"
-
     @classmethod
     def get_final_grade(cls, av1: str, av2: str, default=None):
         final = av1 + av2
@@ -171,8 +165,15 @@ class Grade(models.Model):
         except:
             return default
 
-    grade = models.CharField(max_length=2, choices=Grades.choices)
-    type = models.CharField(max_length=9, choices=Types.choices)
+    av1_1 = models.CharField(max_length=2, choices=Grades.choices, null=True, blank=True)
+    av2_1 = models.CharField(max_length=2, choices=Grades.choices, null=True, blank=True)
+    noa_1 = models.CharField(max_length=2, choices=Grades.choices, null=True, blank=True)
+    av1_2 = models.CharField(max_length=2, choices=Grades.choices, null=True, blank=True)
+    av2_2 = models.CharField(max_length=2, choices=Grades.choices, null=True, blank=True)
+    noa_2 = models.CharField(max_length=2, choices=Grades.choices, null=True, blank=True)
+    av1_3 = models.CharField(max_length=2, choices=Grades.choices, null=True, blank=True)
+    av2_3 = models.CharField(max_length=2, choices=Grades.choices, null=True, blank=True)
+    noa_3 = models.CharField(max_length=2, choices=Grades.choices, null=True, blank=True)
     year = models.PositiveIntegerField()
     degree = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(3)])
     unit = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(3)])
@@ -182,7 +183,7 @@ class Grade(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = [['student', 'year', 'degree', 'unit', 'type', 'teacher_subject']]
+        unique_together = [['student', 'year', 'degree', 'unit', 'teacher_subject']]
 
 
 class Parent(models.Model):

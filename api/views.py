@@ -94,13 +94,14 @@ class SignupStudent(APIView):
         except:
             return Response({"detail":"Erro ao persistir no banco de dados."}, status=status.HTTP_400_BAD_REQUEST)
 
-        refresh = CustomRefreshToken.for_user(student)
-        data = {
-            "refresh":str(refresh),
-            "access":str(refresh.access_token),
-        }
+        student_serializer_readonly = StudentSerializer(student)
+        # refresh = CustomRefreshToken.for_user(student)
+        # data = {
+        #     "refresh":str(refresh),
+        #     "access":str(refresh.access_token),
+        # }
 
-        return Response(data=data, status=status.HTTP_201_CREATED)
+        return Response(data=student_serializer_readonly.data, status=status.HTTP_201_CREATED)
 
 class SignupNotStudent(APIView):
     # name, email, password
@@ -362,24 +363,21 @@ class CommentView(APIView):
 
 
 class GradeView(APIView):
-    # TODO: Please change
     def get(self, request, student_pk=None, year=timezone.now().year, format=None):
+        grades = Grade.objects.filter(student=student_pk, unit=1, year=year)
+        grades_serializer = GradeSerializer(grades, many=True)
+        return Response({"grades":grades_serializer.data}, status=status.HTTP_200_OK)
 
-            # unit_1 = Grade.objects.filter(student=student_pk, year=year, unit=1)
-            # unit_2 = Grade.objects.filter(student=student_pk, year=year, unit=2)
-            # unit_3 = Grade.objects.filter(student=student_pk, year=year, unit=3)
-            # unit_1_serializer = AllGradesTableSerializer(unit_1, many=True)
-            # unit_2_serializer = AllGradesTableSerializer(unit_2, many=True)
-            # unit_3_serializer = AllGradesTableSerializer(unit_3, many=True)
-            # data = [{"unit":1, "grades":unit_1_serializer.data}, {"unit":2, "grades":unit_2_serializer.data}, {"unit":3, "grades":unit_3_serializer.data}]
-            return Response({"grades":{}, "test":{}}, status=status.HTTP_200_OK)
 
-    # grade, type, year, degree, unit, student, teacher_subject
+    # TODO: Change to check if grade already exists before creating
     def post(self, request, student_pk=None, year=timezone.now().year, format=None):
         request.data["year"] = timezone.now().year
-        grade_serializer = GradeSerializer(data=request.data)
-        grade_serializer.is_valid(raise_exception=True)
-        grade_serializer.save()
+        # grade_serializer = GradeSerializer(data=request.data)
+        # grade_serializer.is_valid(raise_exception=True)
+        student = get_object_or_404(Student, pk=request.data.pop("student", None))
+        teacher_subject = get_object_or_404(TeacherSubject, pk=request.data.pop("teacher_subject", None))
+        grade, created = Grade.objects.update_or_create(request.data, student=student, teacher_subject=teacher_subject)
+        grade_serializer = GradeSerializer(grade)
         return Response({"detail":"Nota atribuída.", "grade":grade_serializer.data}, status=status.HTTP_201_CREATED)
 
 
