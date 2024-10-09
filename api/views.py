@@ -3,15 +3,18 @@ from rest_framework.views import APIView
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .models import Grade
+from .permissions import IsAdmin
 
 from .serializers import *
 
 from rest_framework import status
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework_simplejwt.settings import api_settings
 from rest_framework_simplejwt.utils import get_md5_hash_password
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenObtainSerializer
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.settings import api_settings
 
 from .utils import *
 from django.utils import timezone
@@ -22,7 +25,12 @@ from itertools import islice
 class CustomRefreshToken(RefreshToken):
     @classmethod
     def for_user(cls, user):
+        user_id = getattr(user, api_settings.USER_ID_FIELD)
+        if not isinstance(user_id, int):
+            user_id = str(user_id)
+
         token = cls()
+        token[api_settings.USER_ID_CLAIM] = user_id
         token['id'] = user.id
         token['name'] = user.name
         token['type'] = user.type
@@ -44,6 +52,8 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['name'] = user.name
         token['type'] = user.type
 
+        print(token)
+
         return token
 
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -52,12 +62,14 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 # TODO: Mudar rota para user/student/ user/teacher/ user/admin/
 # name, email, type, password
 class Signup(APIView):
+    permission_classes = [IsAdmin]
+
     def post(self, request, format=None):
         user_serializer = SignupUserSerializer(data=request.data)
         user_serializer.is_valid(raise_exception=True)
         user: User = user_serializer.save()
 
-        refresh = CustomRefreshToken.for_user(user)
+        refresh = CustomTokenObtainPairSerializer.get_token(user)
         data = {
             "refresh":str(refresh),
             "access":str(refresh.access_token),
@@ -66,6 +78,7 @@ class Signup(APIView):
 
 
 class SignupStudent(APIView):
+    permission_classes = [IsAdmin]
     # name, email, password,
     # parent {name, cpf}
     # phone [{ddd, number}, ...]
@@ -97,7 +110,7 @@ class SignupStudent(APIView):
             return Response({"detail":"Erro ao persistir no banco de dados."}, status=status.HTTP_400_BAD_REQUEST)
 
         student_serializer_readonly = StudentSerializer(student)
-        # refresh = CustomRefreshToken.for_user(student)
+        # refresh = CustomTokenObtainPairSerializer.get_token(student)
         # data = {
         #     "refresh":str(refresh),
         #     "access":str(refresh.access_token),
@@ -112,7 +125,7 @@ class SignupNotStudent(APIView):
         student_serializer.is_valid(raise_exception=True)
         student: Student = student_serializer.save()
 
-        refresh = CustomRefreshToken.for_user(student)
+        refresh = CustomTokenObtainPairSerializer.get_token(student)
         data = {
             "refresh":str(refresh),
             "access":str(refresh.access_token),
@@ -132,7 +145,7 @@ class Login(APIView):
         if not correct_password:
             return Response({"detail":"Not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        refresh = CustomRefreshToken.for_user(user)
+        refresh = CustomTokenObtainPairSerializer.get_token(user)
         data = {
             "refresh":str(refresh),
             "access":str(refresh.access_token),
@@ -261,11 +274,21 @@ class TeacherSubjectView(APIView):
 
     # teacher, subject
     def post(self, request, format=None):
-        teacher_subject_serializer = TeacherSubjectSerializer(data=request.data)
-        teacher_subject_serializer.is_valid(raise_exception=True)
-        teacher_subject_serializer.save()
-        return Response({"detail":"Professor atribuído a disciplina", "teacher_disciplina":teacher_subject_serializer.data}, status=status.HTTP_201_CREATED)
-
+        # teacher_subject_serializer = TeacherSubjectSerializer(data=request.data)
+        # teacher_subject_serializer.is_valid(raise_exception=True)
+        # teacher_subject_serializer.save()
+        subjects = request.data["subject"]
+        teacher = request.data["teacher"]
+        try:
+            with transaction.atomic():
+                objs = (TeacherSubject(teacher=get_object_or_404(Teacher, pk=teacher), subject=get_object_or_404(Subject, pk=subject)) for subject in subjects)
+                batch_size = len(subjects)
+                batch = list(islice(objs, batch_size))
+                teacher_subject = TeacherSubject.objects.bulk_create(batch, batch_size, unique_fields=["teacher", "subject"])
+                teacher_subject_serializer = TeacherSubjectSerializerReadOnly(teacher_subject, many=True)
+                return Response({"detail":"Professor atribuído a disciplina", "teacher_disciplina":teacher_subject_serializer.data}, status=status.HTTP_201_CREATED)
+        except:
+            return Response({"detail":"Erro ao persistir no banco de dados. Tenha certeza de que os ID's são válidos."}, status=status.HTTP_400_BAD_REQUEST)
 
 class ClassView(APIView):
     def get(self, request, pk=None, format=None):
@@ -379,31 +402,23 @@ class GradeView(APIView):
     # TODO: Change to check if grade already exists before creating
     def post(self, request, student_pk=None, year=timezone.now().year, format=None):
         request.data["year"] = timezone.now().year
-        # student = get_object_or_404(Student, pk=student_req)
-        # teacher_subject = get_object_or_404(TeacherSubject, pk=teacher_subject_req)
-
         grades = request.data["grade"]
-        print(grades)
-        objs = (Grade(student_id=grade.pop("student", None), teacher_subject_id=grade.pop("teacher_subject", None), **grade) for grade in grades)
-        batch_size = len(grades)
-        batch = list(islice(objs, batch_size))
-        grades = Grade.objects.bulk_create(batch, batch_size, update_conflicts=True,
-            update_fields=[
-                "av1_1", "av2_1", "noa_1",
-                "av1_2", "av2_2", "noa_2",
-                "av1_3", "av2_3", "noa_3"
-                ],
-            unique_fields=["student", "teacher_subject", "year", "degree"])
-        grade_serializer = GradeSerializer(grades, many=True)
-        # print(list(objs))
-
-
-
-
-
-        # grade, created = Grade.objects.update_or_create(request.data, student=student, teacher_subject=teacher_subject)
-        # grade_serializer = GradeSerializer(grade)
-        return Response({"detail":"Nota atribuída.", "grade":grade_serializer.data}, status=status.HTTP_201_CREATED)
+        try:
+            with transaction.atomic():
+                objs = (Grade(student_id=grade.pop("student", None), teacher_subject_id=grade.pop("teacher_subject", None), **grade) for grade in grades)
+                batch_size = len(grades)
+                batch = list(islice(objs, batch_size))
+                grades = Grade.objects.bulk_create(batch, batch_size, update_conflicts=True,
+                        update_fields=[
+                            "av1_1", "av2_1", "noa_1",
+                            "av1_2", "av2_2", "noa_2",
+                            "av1_3", "av2_3", "noa_3"
+                            ],
+                        unique_fields=["student", "teacher_subject", "year", "degree"])
+                grade_serializer = GradeSerializer(grades, many=True)
+                return Response({"detail":"Nota atribuída.", "grade":grade_serializer.data}, status=status.HTTP_201_CREATED)
+        except:
+            return Response({"detail":"Erro ao persistir no banco de dados. Tenha certeza de que os ID's são válidos."}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET'])
