@@ -1,9 +1,9 @@
 from django.shortcuts import render,  get_object_or_404
 from rest_framework.views import APIView
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from .models import Grade
-from .permissions import IsAdmin
+from .permissions import IsAdmin, IsTeacher, IsStudent
 
 from .serializers import *
 
@@ -21,6 +21,19 @@ from django.utils import timezone
 from django.db import transaction, connection, reset_queries
 from django.db.utils import IntegrityError
 from itertools import islice
+
+class CustomAPIView(APIView):
+    def get_permissions(self):
+        # Instances and returns the dict of permissions that the view requires.
+        return {key: [permission() for permission in permissions] for key, permissions in self.permission_classes.items()}
+
+    def check_permissions(self, request):
+        # Gets the request method and the permissions dict, and checks the permissions defined in the key matching
+        # the method.
+        method = request.method.lower()
+        for permission in self.get_permissions()[method]:
+            if not permission.has_permission(request, self):
+                self.permission_denied(request, message=getattr(permission, 'message', None))
 
 class CustomRefreshToken(RefreshToken):
     @classmethod
@@ -52,8 +65,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['name'] = user.name
         token['type'] = user.type
 
-        print(token)
-
         return token
 
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -61,8 +72,8 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
 # TODO: Mudar rota para user/student/ user/teacher/ user/admin/
 # name, email, type, password
-class Signup(APIView):
-    permission_classes = [IsAdmin]
+class Signup(CustomAPIView):
+    permission_classes = {"post":[IsAdmin]}
 
     def post(self, request, format=None):
         user_serializer = SignupUserSerializer(data=request.data)
@@ -77,8 +88,8 @@ class Signup(APIView):
         return Response(data=data, status=status.HTTP_201_CREATED)
 
 
-class SignupStudent(APIView):
-    permission_classes = [IsAdmin]
+class SignupStudent(CustomAPIView):
+    permission_classes = {"post":[IsAdmin]}
     # name, email, password,
     # parent {name, cpf}
     # phone [{ddd, number}, ...]
@@ -118,22 +129,24 @@ class SignupStudent(APIView):
 
         return Response(data=student_serializer_readonly.data, status=status.HTTP_201_CREATED)
 
-class SignupNotStudent(APIView):
-    # name, email, password
-    def post(self, request, format=None):
-        student_serializer = SignupStudentSerializer(data=request.data)
-        student_serializer.is_valid(raise_exception=True)
-        student: Student = student_serializer.save()
+# class SignupNotStudent(CustomAPIView):
+#     # name, email, password
+#     def post(self, request, format=None):
+#         student_serializer = SignupStudentSerializer(data=request.data)
+#         student_serializer.is_valid(raise_exception=True)
+#         student: Student = student_serializer.save()
 
-        refresh = CustomTokenObtainPairSerializer.get_token(student)
-        data = {
-            "refresh":str(refresh),
-            "access":str(refresh.access_token),
-        }
-        return Response(data=data, status=status.HTTP_201_CREATED)
+#         refresh = CustomTokenObtainPairSerializer.get_token(student)
+#         data = {
+#             "refresh":str(refresh),
+#             "access":str(refresh.access_token),
+#         }
+#         return Response(data=data, status=status.HTTP_201_CREATED)
 
 
-class Login(APIView):
+class Login(CustomAPIView):
+    permission_classes = {"post":[]}
+
     # email, password
     def post(self, request, format=None):
         errors = check_fields(request, ["email", "password"])
@@ -152,7 +165,9 @@ class Login(APIView):
         }
         return Response(data=data, status=status.HTTP_201_CREATED)
 
-class ParentView(APIView):
+class ParentView(CustomAPIView):
+    permission_classes = {"get":[IsAuthenticated], "post":[IsAdmin], "delete":[IsAdmin], "patch":[IsAdmin]}
+
     def get(self, request, student_pk=None, format=None):
         parents = get_object_or_404(Student, pk=student_pk).parents.all()
         parents_serializer = ParentSerializer(parents, many=True)
@@ -170,7 +185,20 @@ class ParentView(APIView):
         parent_serializer.save(student=student)
         return Response({"detail":"Parent criado e atribuído."}, status=status.HTTP_201_CREATED)
 
-class StudentView(APIView):
+    def delete(self, request, pk=None, format=None):
+        parent = get_object_or_404(Parent, pk=pk)
+        parent.delete()
+        return Response({"parent": "Deletado com sucesso"}, status=status.HTTP_204_NO_CONTENT)
+
+    def patch(self, request, pk=None, format=None):
+        parent = get_object_or_404(Parent, pk=pk)
+        serializer = ParentSerializer(parent, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        return Response({"parent":serializer.data})
+
+
+class StudentView(CustomAPIView):
+    permission_classes = {"get":[IsAuthenticated], "post":[IsAdmin], "delete":[IsAdmin], "patch":[IsAdmin]}
     def get(self, request, pk=None, format=None):
         if pk:
             student = get_object_or_404(Student, pk=pk)
@@ -181,8 +209,20 @@ class StudentView(APIView):
         student_serializer = StudentSerializer(student, many=True)
         return Response({"students":student_serializer.data}, status=status.HTTP_200_OK)
 
+    def delete(self, request, pk=None, format=None):
+        student = get_object_or_404(Student, pk=pk)
+        student.delete()
+        return Response({"student": "Deletado com sucesso"}, status=status.HTTP_204_NO_CONTENT)
 
-class StudentClassView(APIView):
+    def patch(self, request, pk=None, format=None):
+        student = get_object_or_404(Student, pk=pk)
+        serializer = StudentSerializerWrite(student, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"student":serializer.data})
+
+class StudentClassView(CustomAPIView):
+    permission_classes = {"get":[IsAuthenticated], "post":[IsAdmin]}
     # class + year
     def get(self, request, class_pk=None, year=timezone.now().year, format=None):
         class_year = get_object_or_404(ClassYear, _class_id=class_pk, year=year)
@@ -223,8 +263,13 @@ class StudentClassView(APIView):
                 return Response({"detail":"Erro ao persistir no banco de dados. Tenha certeza de que os ID's são válidos."}, status=status.HTTP_400_BAD_REQUEST)
         return Response({"detail":"ID do estudante inválido."}, status=status.HTTP_400_BAD_REQUEST)
 
+    def delete(self, request, pk=None, format=None):
+        student_class = get_object_or_404(StudentClass, pk=pk)
+        student_class.delete()
+        return Response({"student_class": "Deletado com sucesso"}, status=status.HTTP_204_NO_CONTENT)
 
-class TeacherView(APIView):
+class TeacherView(CustomAPIView):
+    permission_classes = {"get":[IsAuthenticated], "post":[IsAdmin]}
     def get(self, request, pk=None, format=None):
         if pk:
             teacher = get_object_or_404(Teacher, pk=pk)
@@ -236,8 +281,13 @@ class TeacherView(APIView):
         teacher_serializer = TeacherSerializer(teacher, many=True)
         return Response({"teachers":teacher_serializer.data}, status=status.HTTP_200_OK)
 
+    def delete(self, request, pk=None, format=None):
+        teacher = get_object_or_404(Teacher, pk=pk)
+        teacher.delete()
+        return Response({"teacher": "Deletado com sucesso"}, status=status.HTTP_204_NO_CONTENT)
 
-class SubjectView(APIView):
+class SubjectView(CustomAPIView):
+    permission_classes = {"get":[IsAuthenticated], "post":[IsAdmin]}
     def get(self, request, pk=None, format=None):
         if pk:
             subject = get_object_or_404(Subject, pk=pk)
@@ -260,8 +310,8 @@ class SubjectView(APIView):
         subject.delete()
         return Response({"subject": "Disciplina deletada com sucesso"}, status=status.HTTP_204_NO_CONTENT)
 
-
-class TeacherSubjectView(APIView):
+class TeacherSubjectView(CustomAPIView):
+    permission_classes = {"get":[IsAuthenticated], "post":[IsAdmin]}
     def get(self, request, pk=None, format=None):
         if pk:
             teacher_subject = get_object_or_404(TeacherSubject, pk=pk)
@@ -290,7 +340,13 @@ class TeacherSubjectView(APIView):
         except:
             return Response({"detail":"Erro ao persistir no banco de dados. Tenha certeza de que os ID's são válidos."}, status=status.HTTP_400_BAD_REQUEST)
 
-class ClassView(APIView):
+    def delete(self, request, pk=None, format=None):
+        teacher_subject = get_object_or_404(TeacherSubject, pk=pk)
+        teacher_subject.delete()
+        return Response({"teacher_subject": "Deletado com sucesso"}, status=status.HTTP_204_NO_CONTENT)
+
+class ClassView(CustomAPIView):
+    permission_classes = {"get":[IsAuthenticated], "post":[IsAdmin]}
     def get(self, request, pk=None, format=None):
         if pk:
             _class =  get_object_or_404(Class, pk=pk)
@@ -311,16 +367,29 @@ class ClassView(APIView):
             class_year_serializer.is_valid(raise_exception=True)
             class_year_serializer.save()
 
-
         return Response({"detail":"Turma criada.", "class":class_year_serializer.data}, status=status.HTTP_201_CREATED)
 
-class ClassYearView(APIView):
+    def delete(self, request, pk=None, format=None):
+        _class = get_object_or_404(Class, pk=pk)
+        _class.delete()
+        return Response({"_class": "Deletado com sucesso"}, status=status.HTTP_204_NO_CONTENT)
+
+
+class ClassYearView(CustomAPIView):
+    permission_classes = {"get":[IsAuthenticated], "post":[IsAdmin]}
     def get(self, request, pk=None, format=None):
         class_year = ClassYear.objects.filter(year=timezone.now().year)
         class_year_serializer = ClassYearSerializerReadOnly(class_year, many=True)
         return Response({"class_years": class_year_serializer.data}, status=status.HTTP_200_OK)
 
-class ClassYearTeacherSubjectView(APIView):
+    def delete(self, request, pk=None, format=None):
+        class_year = get_object_or_404(ClassYear, pk=pk)
+        class_year.delete()
+        return Response({"class_year": "Deletado com sucesso"}, status=status.HTTP_204_NO_CONTENT)
+
+
+class ClassYearTeacherSubjectView(CustomAPIView):
+    permission_classes = {"get":[IsAuthenticated], "post":[IsAdmin]}
     def get(self, request, class_pk=None, year=timezone.now().year, format=None):
         class_year = get_object_or_404(ClassYear, _class_id=class_pk, year=year)
         class_year_serializer = ClassYearSerializerAllTeachers(class_year)
@@ -339,8 +408,14 @@ class ClassYearTeacherSubjectView(APIView):
         class_teacher_subject_serialializer.save()
         return Response({"detail":"Turma atribuída ao professor.", "turma":class_teacher_subject_serialializer.data})
 
+    def delete(self, request, pk=None, format=None):
+        class_year_teacher_subject = get_object_or_404(ClassYearTeacherSubject, pk=pk)
+        class_year_teacher_subject.delete()
+        return Response({"class_year_teacher_subject": "Deletado com sucesso"}, status=status.HTTP_204_NO_CONTENT)
 
-class AnnouncementView(APIView):
+class AnnouncementView(CustomAPIView):
+    permission_classes = {"get":[IsAuthenticated], "post":[IsAdmin or IsTeacher]}
+
     def get(self, request, pk=None, format=None):
         if pk:
             announcement = get_object_or_404(Announcement, pk=pk)
@@ -367,8 +442,13 @@ class AnnouncementView(APIView):
         announcement_serializer.save(user=user)
         return Response({"detail":"Comunicado criado.", "comunicado":announcement_serializer.data})
 
+    def delete(self, request, pk=None, format=None):
+        announcement = get_object_or_404(Announcement, pk=pk)
+        announcement.delete()
+        return Response({"announcement": "Deletado com sucesso"}, status=status.HTTP_204_NO_CONTENT)
 
-class CommentView(APIView):
+class CommentView(CustomAPIView):
+    permission_classes = {"get":[IsAuthenticated], "post":[IsAuthenticated]}
     def get(self, request, pk=None, format=None):
         if pk:
             comment = get_object_or_404(Comment, pk=pk)
@@ -391,8 +471,14 @@ class CommentView(APIView):
         comment_serializer.save()
         return Response({"detail":"Comentário criado.", "comentario":comment_serializer.data})
 
+    def delete(self, request, pk=None, format=None):
+        comment = get_object_or_404(Comment, pk=pk)
+        comment.delete()
+        return Response({"comment": "Deletado com sucesso"}, status=status.HTTP_204_NO_CONTENT)
 
-class GradeView(APIView):
+class GradeView(CustomAPIView):
+    permission_classes = {"get":[IsAuthenticated], "post":[IsTeacher]}
+
     def get(self, request, student_pk=None, year=timezone.now().year, format=None):
         grades = Grade.objects.filter(student=student_pk, year=year)
         grades_serializer = GradeSerializer(grades, many=True)
@@ -422,6 +508,7 @@ class GradeView(APIView):
 
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def TeacherAllSubjects(request, pk=None):
     teacher_subject = TeacherSubject.objects.filter(teacher_id=pk)
     teacher_subject_serializer = TeacherSubjectSerializerReadOnly(teacher_subject, many=True)

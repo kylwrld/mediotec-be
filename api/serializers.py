@@ -117,6 +117,24 @@ class StudentSerializer(serializers.ModelSerializer):
 
         return data
 
+class StudentSerializerWrite(serializers.ModelSerializer):
+    class Meta:
+        model = Student
+        # need to add Class
+        fields = ["id", "name", "email"]
+
+    # def to_representation(self, instance):
+    #     data = super(StudentSerializerWrite, self).to_representation(instance)
+
+    #     # print(StudentClass.objects.filter(student=instance.id).last().class_year._class.degree)
+    #     student_class = StudentClass.objects.filter(student=instance.id).last()
+    #     if student_class:
+    #         data['degree'] = student_class.class_year._class.degree
+    #     else:
+    #         data['degree'] = None
+
+    #     return data
+
 
 class StudentParentSerializer(serializers.ModelSerializer):
     parents = ParentSerializer(read_only=True, many=True)
