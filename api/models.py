@@ -138,7 +138,7 @@ class Announcement(models.Model):
     title = models.CharField(max_length=70)
     body = models.CharField(max_length=2000)
     fixed = models.BooleanField(default=False, null=True, blank=True)
-    user = models.ForeignKey(NotStudent, related_name="announcements", on_delete=models.DO_NOTHING, blank=True)
+    user = models.ForeignKey(NotStudent, related_name="announcements", on_delete=models.CASCADE, blank=True)
     class_year = models.ForeignKey(ClassYear, related_name="announcemets", on_delete=models.CASCADE, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -146,7 +146,7 @@ class Announcement(models.Model):
 class Comment(models.Model):
     body = models.CharField(max_length=1000)
     announcement = models.ForeignKey(Announcement, related_name="comments", on_delete=models.CASCADE)
-    user = models.ForeignKey(User, related_name="comments", on_delete=models.DO_NOTHING)
+    user = models.ForeignKey(User, related_name="comments", on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -177,8 +177,8 @@ class Grade(models.Model):
     year = models.PositiveIntegerField()
     degree = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(3)])
     # unit = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(3)])
-    student = models.ForeignKey(User, related_name="grades", on_delete=models.DO_NOTHING)
-    teacher_subject = models.ForeignKey(TeacherSubject, related_name="grades", on_delete=models.DO_NOTHING)
+    student = models.ForeignKey(User, related_name="grades", on_delete=models.CASCADE)
+    teacher_subject = models.ForeignKey(TeacherSubject, related_name="grades", on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -234,8 +234,8 @@ class Attendance(models.Model):
         PRESENTE = "PRESENTE", "PRESENTE"
 
     type = models.CharField(max_length=11, choices=Types.choices)
-    user = models.ForeignKey(Student, related_name="attendances", on_delete=models.DO_NOTHING)
-    class_year_teacher_subject = models.ForeignKey(ClassYearTeacherSubject, on_delete=models.DO_NOTHING)
+    user = models.ForeignKey(Student, related_name="attendances", on_delete=models.CASCADE)
+    class_year_teacher_subject = models.ForeignKey(ClassYearTeacherSubject, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
