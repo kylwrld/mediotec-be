@@ -23,6 +23,7 @@ class CustomRefreshToken(RefreshToken):
     @classmethod
     def for_user(cls, user):
         token = cls()
+        token['id'] = user.id
         token['name'] = user.name
         token['type'] = user.type
 
@@ -39,6 +40,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
+        token['id'] = user.id
         token['name'] = user.name
         token['type'] = user.type
 
@@ -240,6 +242,11 @@ class SubjectView(APIView):
         subject_serializer.save()
         return Response({"detail":"Disciplina criada.", "subject":subject_serializer.data}, status=status.HTTP_201_CREATED)
 
+    def delete(self, request, pk=None, format=None):
+        subject = get_object_or_404(Subject, pk=pk)
+        subject.delete()
+        return Response({"subject": "Disciplina deletada com sucesso"}, status=status.HTTP_204_NO_CONTENT)
+
 
 class TeacherSubjectView(APIView):
     def get(self, request, pk=None, format=None):
@@ -364,7 +371,7 @@ class CommentView(APIView):
 
 class GradeView(APIView):
     def get(self, request, student_pk=None, year=timezone.now().year, format=None):
-        grades = Grade.objects.filter(student=student_pk, unit=1, year=year)
+        grades = Grade.objects.filter(student=student_pk, year=year)
         grades_serializer = GradeSerializer(grades, many=True)
         return Response({"grades":grades_serializer.data}, status=status.HTTP_200_OK)
 
@@ -372,12 +379,30 @@ class GradeView(APIView):
     # TODO: Change to check if grade already exists before creating
     def post(self, request, student_pk=None, year=timezone.now().year, format=None):
         request.data["year"] = timezone.now().year
-        # grade_serializer = GradeSerializer(data=request.data)
-        # grade_serializer.is_valid(raise_exception=True)
-        student = get_object_or_404(Student, pk=request.data.pop("student", None))
-        teacher_subject = get_object_or_404(TeacherSubject, pk=request.data.pop("teacher_subject", None))
-        grade, created = Grade.objects.update_or_create(request.data, student=student, teacher_subject=teacher_subject)
-        grade_serializer = GradeSerializer(grade)
+        # student = get_object_or_404(Student, pk=student_req)
+        # teacher_subject = get_object_or_404(TeacherSubject, pk=teacher_subject_req)
+
+        grades = request.data["grade"]
+        print(grades)
+        objs = (Grade(student_id=grade.pop("student", None), teacher_subject_id=grade.pop("teacher_subject", None), **grade) for grade in grades)
+        batch_size = len(grades)
+        batch = list(islice(objs, batch_size))
+        grades = Grade.objects.bulk_create(batch, batch_size, update_conflicts=True,
+            update_fields=[
+                "av1_1", "av2_1", "noa_1",
+                "av1_2", "av2_2", "noa_2",
+                "av1_3", "av2_3", "noa_3"
+                ],
+            unique_fields=["student", "teacher_subject", "year", "degree"])
+        grade_serializer = GradeSerializer(grades, many=True)
+        # print(list(objs))
+
+
+
+
+
+        # grade, created = Grade.objects.update_or_create(request.data, student=student, teacher_subject=teacher_subject)
+        # grade_serializer = GradeSerializer(grade)
         return Response({"detail":"Nota atribuída.", "grade":grade_serializer.data}, status=status.HTTP_201_CREATED)
 
 

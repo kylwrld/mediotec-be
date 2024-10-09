@@ -176,14 +176,14 @@ class Grade(models.Model):
     noa_3 = models.CharField(max_length=2, choices=Grades.choices, null=True, blank=True)
     year = models.PositiveIntegerField()
     degree = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(3)])
-    unit = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(3)])
+    # unit = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(3)])
     student = models.ForeignKey(User, related_name="grades", on_delete=models.DO_NOTHING)
     teacher_subject = models.ForeignKey(TeacherSubject, related_name="grades", on_delete=models.DO_NOTHING)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = [['student', 'year', 'degree', 'unit', 'teacher_subject']]
+        unique_together = [['student', 'year', 'degree', 'teacher_subject']]
 
 
 class Parent(models.Model):

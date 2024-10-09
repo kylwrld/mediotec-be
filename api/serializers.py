@@ -85,6 +85,12 @@ class ClassYearSerializer(serializers.ModelSerializer):
         fields = ["id", "_class", "year"]
         read_only_fields = ("id",)
 
+class ClassYearSerializerReadOnly(serializers.ModelSerializer):
+    _class = ClassSerializer()
+    class Meta:
+        model = ClassYear
+        fields = ["_class", "year"]
+
 class StudentClassSerializer(serializers.ModelSerializer):
     # student_id = serializers.IntegerField(write_only=True)
     class Meta:
@@ -160,17 +166,6 @@ class TeacherSubjectSerializerReadOnly(serializers.ModelSerializer):
         fields = ["id", "teacher", "subject"]
         read_only_fields = ("id",)
 
-class ClassYearSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ClassYear
-        fields = ["_class", "year"]
-
-class ClassYearSerializerReadOnly(serializers.ModelSerializer):
-    _class = ClassSerializer()
-    class Meta:
-        model = ClassYear
-        fields = ["_class", "year"]
-
 class ClassYearSerializerAllStudents(serializers.ModelSerializer):
     students = StudentSerializer(read_only=True, many=True)
     _class = ClassSerializer(read_only=True)
@@ -223,7 +218,7 @@ class GradeSerializer(serializers.ModelSerializer):
             "id", "av1_1", "av2_1", "noa_1",
             "av1_2", "av2_2", "noa_2",
             "av1_3", "av2_3", "noa_3",
-            "year", "degree", "unit",
+            "year", "degree",
             "student", "teacher_subject"]
 
         read_only_fields = ("id",)
@@ -232,7 +227,7 @@ class AllGradesTableSerializer(serializers.ModelSerializer):
     subject = serializers.CharField(source="teacher_subject.subject.name")
     class Meta:
         model = Grade
-        fields = ["id", "grade", "unit", "type", "subject"]
+        fields = ["id", "grade", "type", "subject"]
         read_only_fields = ("id",)
 
 class TimeScheduleSerializer(serializers.ModelSerializer):
