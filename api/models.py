@@ -27,7 +27,7 @@ class User(AbstractUser):
     def save(self, *args, **kwargs):
         if not self.pk:
             self.type = self.base_type
-            return super().save(*args, **kwargs)
+        return super().save(*args, **kwargs)
 
 
 class NotStudentManager(BaseUserManager):
@@ -110,12 +110,15 @@ class Class(models.Model):
         MANHA = "Manhã", "Manhã"
         TARDE = "Tarde", "Tarde"
 
-    name = models.CharField(max_length=50, unique=True)
+    name = models.CharField(max_length=50)
     degree = models.IntegerField(validators=[validate_range(1, 3)])
     type = models.CharField(max_length=11, choices=Types.choices)
     shift = models.CharField(max_length=5, choices=Shifts.choices)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = [['name', 'type']]
 
 class ClassYear(models.Model):
     _class = models.ForeignKey(Class, related_name="class_years", on_delete=models.CASCADE)

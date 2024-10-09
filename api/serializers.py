@@ -11,7 +11,7 @@ class UserSerializer(serializers.ModelSerializer):
 class UserSerializerReadOnly(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["id", "name", "type"]
+        fields = ["id", "name", "email", "type"]
         read_only_fields = ("id",)
 
 class PhoneSerializer(serializers.ModelSerializer):
@@ -123,17 +123,17 @@ class StudentSerializerWrite(serializers.ModelSerializer):
         # need to add Class
         fields = ["id", "name", "email"]
 
-    # def to_representation(self, instance):
-    #     data = super(StudentSerializerWrite, self).to_representation(instance)
+    def to_representation(self, instance):
+        data = super(StudentSerializerWrite, self).to_representation(instance)
 
-    #     # print(StudentClass.objects.filter(student=instance.id).last().class_year._class.degree)
-    #     student_class = StudentClass.objects.filter(student=instance.id).last()
-    #     if student_class:
-    #         data['degree'] = student_class.class_year._class.degree
-    #     else:
-    #         data['degree'] = None
+        # print(StudentClass.objects.filter(student=instance.id).last().class_year._class.degree)
+        student_class = StudentClass.objects.filter(student=instance.id).last()
+        if student_class:
+            data['degree'] = student_class.class_year._class.degree
+        else:
+            data['degree'] = None
 
-    #     return data
+        return data
 
 
 class StudentParentSerializer(serializers.ModelSerializer):
@@ -167,6 +167,14 @@ class TeacherSerializer(serializers.ModelSerializer):
         fields = ["id", "name", "email", "type"]
         read_only_fields = ("id", "name", "email", "type")
 
+class TeacherSerializerWrite(serializers.ModelSerializer):
+    # subjects = SubjectSerializer(read_only=True, many=True)
+    class Meta:
+        model = Teacher
+        # TODO: need to add Class
+        fields = ["id", "name", "email"]
+        read_only_fields = ("id",)
+
 
 
 class TeacherSubjectSerializer(serializers.ModelSerializer):
@@ -174,6 +182,13 @@ class TeacherSubjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = TeacherSubject
         fields = ["id", "teacher", "subject", "teacher_field"]
+        read_only_fields = ("id",)
+
+class TeacherSubjectSerializerWrite(serializers.ModelSerializer):
+    # teacher_field = TeacherSerializer(read_only=True, source="teacher")
+    class Meta:
+        model = TeacherSubject
+        fields = ["id", "teacher", "subject"]
         read_only_fields = ("id",)
 
 class TeacherSubjectSerializerReadOnly(serializers.ModelSerializer):
@@ -208,16 +223,17 @@ class ClassYearTeacherSubjectSerializer(serializers.ModelSerializer):
 class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
-        fields = ["id", "body", "announcement", "user"]
+        fields = ["id", "body", "announcement"]
         read_only_fields = ("id",)
 
 class AnnouncementSerializer(serializers.ModelSerializer):
     comments = CommentSerializer(read_only=True, many=True)
+    user = UserSerializerReadOnly(read_only=True)
 
     class Meta:
         model = Announcement
-        fields = ["id", "title", "body", "fixed", "class_year", "comments", "created_at"]
-        read_only_fields = ("id",)
+        fields = ["id", "title", "body", "fixed", "class_year", "user", "comments", "created_at"]
+        read_only_fields = ("id", "comments", "created_at", "user")
 
 class AnnouncementSerializerReadOnly(serializers.ModelSerializer):
     comments = CommentSerializer(read_only=True, many=True)

@@ -18,6 +18,13 @@ class IsTeacher(JWTAuthentication):
 
         return False
 
+class IsAdminOrTeacher(JWTAuthentication):
+    def has_permission(self, request, view):
+        if request.user.is_authenticated and request.user.type == User.Types.ADMIN or request.user.type == User.Types.TEACHER:
+            return True
+
+        return False
+
 class IsStudent(JWTAuthentication):
     def has_permission(self, request, view):
         if request.user.is_authenticated and request.user.type == User.Types.STUDENT:
