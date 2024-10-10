@@ -19,14 +19,19 @@ from django.conf import settings
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
+import environ
+env = environ.Env()
+environ.Env.read_env()
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-oty1m6molqs_@4mgfov8ryxq5ekfbh$1_8x1ozf_7w+n5n#ao#'
+SECRET_KEY = env("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = []
 
@@ -134,11 +139,16 @@ WSGI_APPLICATION = 'mediotec.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
+import dj_database_url
+
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    "default": dj_database_url.parse(env("DATABASE_URL"))
 }
 
 
@@ -191,3 +201,4 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 LANGUAGE_CODE = "pt-br"
+# ACCOUNT_USER_MODEL_USERNAME_FIELD = "email"

@@ -598,10 +598,14 @@ def TeacherAllClasses(request, pk=None):
 
 @api_view(['GET'])
 def hello_world(request):
-    teacher_subject = Teacher.objects.first().teachersubject_set.all()
-    print(teacher_subject[1].class_year_teacher_subject.all())
-    print(teacher_subject)
-    print(ClassYearTeacherSubject.objects.filter(teacher_subject__teacher_id=36))
-    print(ClassYearTeacherSubjectSerializerReadOnly(ClassYearTeacherSubject.objects.filter(teacher_subject__teacher_id=36), many=True).data)
-
+    # teacher_subject = Teacher.objects.first().teachersubject_set.all()
+    # print(teacher_subject[1].class_year_teacher_subject.all())
+    # print(teacher_subject)
+    # print(ClassYearTeacherSubject.objects.filter(teacher_subject__teacher_id=36))
+    # print(ClassYearTeacherSubjectSerializerReadOnly(ClassYearTeacherSubject.objects.filter(teacher_subject__teacher_id=36), many=True).data)
+    print(User.objects.all())
+    print(User.objects.filter(email="admin@gmail.com"))
+    print(User.objects.get(email="admin@gmail.com"))
+    print(User.objects.get(email="admin@gmail.com"))
+    # print(User.objects.all())
     return Response({"message": {}})

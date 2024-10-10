@@ -4,6 +4,34 @@ from enum import Enum
 from .utils import *
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db.models import Q
+from django.utils import timezone
+
+# class UserManager(BaseUserManager):
+
+#     def create_user(self, email, password=None):
+
+#         if email is None:
+#             raise TypeError('Users must have an email address.')
+
+#         user = self.model(email=self.normalize_email(email))
+#         user.set_password(password)
+#         user.birth_date = timezone.now()
+#         user.save()
+
+#         return user
+
+#     def create_superuser(self, email, password):
+
+#         if password is None:
+#             raise TypeError('Superusers must have a password.')
+
+#         user = self.create_user(email, password)
+#         user.is_superuser = True
+#         user.is_staff = True
+#         user.birth_date = timezone.now()
+#         user.save()
+
+#         return user
 
 class User(AbstractUser):
     name = models.CharField(max_length=70, null=False, blank=False)
@@ -11,6 +39,8 @@ class User(AbstractUser):
     birth_date = models.DateField()
     entry_date = models.DateField(auto_now_add=True)
     end_date = models.DateField(null=True)
+
+    # objects = UserManager()
 
     class Types(models.TextChoices):
         ADMIN = "ADMIN", "Admin"
@@ -22,12 +52,13 @@ class User(AbstractUser):
 
     username = None
     USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = ['username']
+    REQUIRED_FIELDS = []
 
     def save(self, *args, **kwargs):
         if not self.pk:
             self.type = self.base_type
         return super().save(*args, **kwargs)
+
 
 
 class NotStudentManager(BaseUserManager):
