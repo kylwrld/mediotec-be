@@ -1,6 +1,8 @@
 from django.urls import path, include
 from . import views
 
+from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
+
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
@@ -19,12 +21,12 @@ urlpatterns = [
     path("student/<int:pk>/", views.StudentView.as_view(), name="student_id"),
 
     path("student_class/", views.StudentClassView.as_view(), name="student_class"),
-    path("student_class/<int:class_pk>/<int:year>/", views.StudentClassView.as_view(), name="student_class"),
+    path("student_class/<int:class_pk>/<int:year>/", views.StudentClassView.as_view(), name="student_class_id"),
 
     path("teacher/", views.TeacherView.as_view(), name="teacher"),
     path("teacher/<int:pk>/", views.TeacherView.as_view(), name="teacher_id"),
-    path("teacher/<int:pk>/subjects/", views.TeacherAllSubjects, name="teacher_subjects"),
-    path("teacher/<int:pk>/classes/", views.TeacherAllClasses, name="teacher_subjects"),
+    path("teacher/<int:pk>/subjects/", views.TeacherAllSubjects, name="teacher_id_subjects"),
+    path("teacher/<int:pk>/classes/", views.TeacherAllClasses, name="teacher_id_classes"),
     # TODO: TEACHER SIGNUP VIEW
 
     path("subject/", views.SubjectView.as_view(), name="subject"),
@@ -33,16 +35,15 @@ urlpatterns = [
 
     path("teacher_subject/", views.TeacherSubjectView.as_view(), name="teacher_subject"),
     path("teacher_subject/<int:pk>/", views.TeacherSubjectView.as_view(), name="teacher_subject_id"),
-    path("teacher_subject/", views.TeacherSubjectView.as_view(), name="teacher_subject"),
 
     path("class/", views.ClassView.as_view(), name="class"),
     path("class/<int:pk>/", views.ClassView.as_view(), name="class_id"),
 
-    path("class_year/", views.ClassYearView.as_view(), name="class"),
-    path("class_year/<int:pk>/", views.ClassYearView.as_view(), name="class_id"),
+    path("class_year/", views.ClassYearView.as_view(), name="class_year"),
+    path("class_year/<int:pk>/", views.ClassYearView.as_view(), name="class_year_id"),
 
     path("class_year_teacher_subject/", views.ClassYearTeacherSubjectView.as_view(), name="class_year_teacher_subject"),
-    path("class_year_teacher_subject/<int:class_pk>/<int:year>/", views.ClassYearTeacherSubjectView.as_view(), name="class_year_teacher_subject"),
+    path("class_year_teacher_subject/<int:class_pk>/<int:year>/", views.ClassYearTeacherSubjectView.as_view(), name="class_year_teacher_subject_id"),
 
     path("announcement/", views.AnnouncementView.as_view(), name="announcement"),
     path("announcement/<int:pk>/", views.AnnouncementView.as_view(), name="announcement_id"),
@@ -60,5 +61,11 @@ urlpatterns = [
     path("teste/", views.hello_world, name="teste"),
 
     path("api/token/", views.CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path("api/token/refresh/", TokenRefreshView.as_view(), name='token_refresh')
+    path("api/token/refresh/", TokenRefreshView.as_view(), name='token_refresh'),
+
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    # Optional UI:
+    path('api/schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    path('api/schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
+
 ]
