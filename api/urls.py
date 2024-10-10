@@ -24,10 +24,12 @@ urlpatterns = [
     path("teacher/", views.TeacherView.as_view(), name="teacher"),
     path("teacher/<int:pk>/", views.TeacherView.as_view(), name="teacher_id"),
     path("teacher/<int:pk>/subjects/", views.TeacherAllSubjects, name="teacher_subjects"),
+    path("teacher/<int:pk>/classes/", views.TeacherAllClasses, name="teacher_subjects"),
     # TODO: TEACHER SIGNUP VIEW
 
     path("subject/", views.SubjectView.as_view(), name="subject"),
     path("subject/<int:pk>/", views.SubjectView.as_view(), name="subject_id"),
+    path("subject/<int:pk>/teachers/", views.SubjectsAllTeachers, name="subject_teachers"),
 
     path("teacher_subject/", views.TeacherSubjectView.as_view(), name="teacher_subject"),
     path("teacher_subject/<int:pk>/", views.TeacherSubjectView.as_view(), name="teacher_subject_id"),

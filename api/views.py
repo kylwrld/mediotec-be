@@ -270,7 +270,6 @@ class TeacherView(CustomAPIView):
         if pk:
             teacher = get_object_or_404(Teacher, pk=pk)
             teacher_serializer = TeacherSerializer(teacher)
-            print(teacher, teacher_serializer.data)
             return Response(teacher_serializer.data, status=status.HTTP_200_OK)
 
         teacher = Teacher.objects.all()
@@ -384,9 +383,10 @@ class ClassView(CustomAPIView):
             _class = class_serializer.save()
             class_year_serializer = ClassYearSerializer(data={"_class":_class.pk, "year":timezone.now().year})
             class_year_serializer.is_valid(raise_exception=True)
-            class_year_serializer.save()
+            class_year = class_year_serializer.save()
+            class_year_serializer_rd = ClassYearSerializerReadOnly(class_year)
 
-        return Response({"detail":"Turma criada.", "class":class_year_serializer.data}, status=status.HTTP_201_CREATED)
+        return Response({"detail":"Turma criada.", "class_year":class_year_serializer_rd.data}, status=status.HTTP_201_CREATED)
 
     def delete(self, request, pk=None, format=None):
         _class = get_object_or_404(Class, pk=pk)
@@ -475,7 +475,7 @@ class AnnouncementView(CustomAPIView):
         announcement.delete()
         return Response({"announcement": "Deletado com sucesso"}, status=status.HTTP_204_NO_CONTENT)
 
-    def path(self, request, pk=None, format=None):
+    def put(self, request, pk=None, format=None):
         announcement = get_object_or_404(Announcement, pk=pk)
         serializer = AnnouncementSerializer(announcement, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
@@ -555,7 +555,30 @@ class GradeView(CustomAPIView):
 def TeacherAllSubjects(request, pk=None):
     teacher_subject = TeacherSubject.objects.filter(teacher_id=pk)
     teacher_subject_serializer = TeacherSubjectSerializerReadOnly(teacher_subject, many=True)
-    return Response({"teacher": teacher_subject_serializer.data})
+    return Response({"teacher": teacher_subject_serializer.data}, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def SubjectsAllTeachers(request, pk=None):
+    teacher_subject = TeacherSubject.objects.filter(subject_id=pk)
+    teacher_subject_serializer = TeacherSubjectSerializerReadOnly(teacher_subject, many=True)
+    return Response({"teacher_subject": teacher_subject_serializer.data}, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def TeacherAllClasses(request, pk=None):
+    teacher = get_object_or_404(Teacher, pk=pk)
+    class_year_teacher_subject_serializer = ClassYearTeacherSubjectSerializerReadOnly(
+        ClassYearTeacherSubject.objects.filter(teacher_subject__teacher=teacher), many=True)
+
+    data = {}
+    for cyts in class_year_teacher_subject_serializer.data:
+        if data.get("class_year"):
+            continue
+        data[cyts["class_year"]["_class"]["id"]] = cyts["class_year"]["_class"]
+    response = [ value for key, value in data.items() ]
+
+    return Response({"classes": response}, status=status.HTTP_200_OK)
 
 
 
@@ -576,8 +599,9 @@ def TeacherAllSubjects(request, pk=None):
 @api_view(['GET'])
 def hello_world(request):
     teacher_subject = Teacher.objects.first().teachersubject_set.all()
-    teacher_subject_serializer = TeacherSubjectSerializerReadOnly(teacher_subject, many=True)
-    print(Teacher.objects.first().teachersubject_set.all())
-    print(Teacher.objects.first().subjects.all())
+    print(teacher_subject[1].class_year_teacher_subject.all())
+    print(teacher_subject)
+    print(ClassYearTeacherSubject.objects.filter(teacher_subject__teacher_id=36))
+    print(ClassYearTeacherSubjectSerializerReadOnly(ClassYearTeacherSubject.objects.filter(teacher_subject__teacher_id=36), many=True).data)
 
-    return Response({"message": teacher_subject_serializer.data})
+    return Response({"message": {}})

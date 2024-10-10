@@ -22,7 +22,7 @@ def validate_range(MIN: int, MAX: int):
 
     return inner_func
 
-class EGrade(Enum):
+class GRADE_TABLE(Enum):
     NANA = "ND"
     NAPA = "ND"
     PANA = "ND"
@@ -32,6 +32,52 @@ class EGrade(Enum):
     PAA = "D"
     APA = "D"
     AA = "D"
+
+    @classmethod
+    def get_final_grade(cls, av1: str, av2: str, default=None):
+        final = av1 + av2
+        try:
+            return cls[final].value
+        except:
+            return default
+
+class GRADE_WEIGHT(Enum):
+    NA = 0
+    PA = 1
+    A = 2
+
+REVERSE_GRADE_WEIGHT = {
+    0:"NA",
+    1:"PA",
+    2:"A"
+}
+
+def higher_grade(av1, av2):
+    n1, n2 = GRADE_WEIGHT[av1].value, GRADE_WEIGHT[av2].value
+    return REVERSE_GRADE_WEIGHT[max(n1, n2)]
+
+def fill_grades(instance, data: dict):
+    for unit in range(1, 4):
+        av1 = getattr(instance, f"av1_{unit}")
+        av2 = getattr(instance, f"av2_{unit}")
+        noa = getattr(instance, f"noa_{unit}")
+        if av1 and av2:
+            data[f"mu_{unit}"] = GRADE_TABLE.get_final_grade(av1, av2)
+        else:
+            data[f"mu_{unit}"] = None
+
+        if av1 and av2 and data[f"mu_{unit}"] == "D":
+            data[f"cf_{unit}"] = "D"
+            data[f"noa_{unit}"] = None
+            continue
+
+        if av1 and av2 and noa:
+            higher = higher_grade(av1, av2)
+            data[f"cf_{unit}"] = GRADE_TABLE.get_final_grade(noa, higher)
+        else:
+            data[f"cf_{unit}"] = None
+
+    return data
 
 class Day(Enum):
     SEGUNDA = "SEGUNDA"

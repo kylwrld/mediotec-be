@@ -160,14 +160,6 @@ class Grade(models.Model):
         PA = "PA", "PA"
         A  = "A", "A"
 
-    @classmethod
-    def get_final_grade(cls, av1: str, av2: str, default=None):
-        final = av1 + av2
-        try:
-            return EGrade[final].value
-        except:
-            return default
-
     av1_1 = models.CharField(max_length=2, choices=Grades.choices, null=True, blank=True)
     av2_1 = models.CharField(max_length=2, choices=Grades.choices, null=True, blank=True)
     noa_1 = models.CharField(max_length=2, choices=Grades.choices, null=True, blank=True)
@@ -202,7 +194,7 @@ class Phone(models.Model):
 # (TURMA + ANO) + (PROFESSOR + DISCIPLINA)
 class ClassYearTeacherSubject(models.Model):
     class_year = models.ForeignKey(ClassYear, on_delete=models.CASCADE)
-    teacher_subject = models.ForeignKey(TeacherSubject, on_delete=models.CASCADE)
+    teacher_subject = models.ForeignKey(TeacherSubject, related_name="class_year_teacher_subject", on_delete=models.CASCADE)
 
     class Meta:
         unique_together = [['class_year', 'teacher_subject']]

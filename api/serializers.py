@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import *
+from .utils import *
 from django.utils import timezone
 
 class UserSerializer(serializers.ModelSerializer):
@@ -112,8 +113,10 @@ class StudentSerializer(serializers.ModelSerializer):
         student_class = StudentClass.objects.filter(student=instance.id).last()
         if student_class:
             data['degree'] = student_class.class_year._class.degree
+            data['class_year'] = ClassYearSerializerReadOnly(student_class.class_year).data
         else:
             data['degree'] = None
+            data['class_year'] = None
 
         return data
 
@@ -130,6 +133,7 @@ class StudentSerializerWrite(serializers.ModelSerializer):
         student_class = StudentClass.objects.filter(student=instance.id).last()
         if student_class:
             data['degree'] = student_class.class_year._class.degree
+            data['class_year'] = ClassYearSerializerReadOnly(student_class.class_year).data
         else:
             data['degree'] = None
 
@@ -220,6 +224,14 @@ class ClassYearTeacherSubjectSerializer(serializers.ModelSerializer):
         fields = ["id", "class_year", "teacher_subject"]
         read_only_fields = ("id",)
 
+class ClassYearTeacherSubjectSerializerReadOnly(serializers.ModelSerializer):
+    # teacher_subject = TeacherSubjectSerializerReadOnly()
+    class_year = ClassYearSerializerReadOnly(read_only=True)
+    class Meta:
+        model = ClassYearTeacherSubject
+        fields = ["id", "class_year", "teacher_subject"]
+        read_only_fields = ("id",)
+
 class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
@@ -256,6 +268,26 @@ class GradeSerializer(serializers.ModelSerializer):
             "student", "teacher_subject"]
 
         read_only_fields = ("id",)
+
+    def to_representation(self, instance):
+        data = super(GradeSerializer, self).to_representation(instance)
+
+        fill_grades(instance, data)
+        # if instance.av1_1 and instance.av2_1:
+            # data["mu_1"] = Grade.get_final_grade(instance.av1_1, instance.av2_1)
+
+        # if instance.av1_1 and instance.av2_1 and instance.noa_1:
+        #     higher = higher_grade(instance.av1_1, instance.av2_1)
+        #     data["mu_1"] = Grade.get_final_grade(instance.noa_1, higher)
+
+        # if instance.av1_2 and instance.av2_2:
+        #     data["mu_2"] = Grade.get_final_grade(instance.av1_2, instance.av2_2)
+
+        # if instance.av1_3 and instance.av2_3:
+        #     data["mu_3"] = Grade.get_final_grade(instance.av1_3, instance.av2_3)
+
+
+        return data
 
 class AllGradesTableSerializer(serializers.ModelSerializer):
     subject = serializers.CharField(source="teacher_subject.subject.name")
