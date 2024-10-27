@@ -202,6 +202,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 #
 AUTH_USER_MODEL = 'api.User'
 
+ALLOWED_HOSTS = ["https://mediotec-fe.onrender.com"]
+
 CORS_ALLOWED_ORIGINS = [
     "https://mediotec-fe.onrender.com",
 ]
