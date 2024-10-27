@@ -90,7 +90,7 @@ class ClassYearSerializerReadOnly(serializers.ModelSerializer):
     _class = ClassSerializer()
     class Meta:
         model = ClassYear
-        fields = ["_class", "year"]
+        fields = ["id", "_class", "year"]
 
 class StudentClassSerializer(serializers.ModelSerializer):
     # student_id = serializers.IntegerField(write_only=True)
@@ -99,7 +99,7 @@ class StudentClassSerializer(serializers.ModelSerializer):
         fields = ["id", "student", "class_year"]
         read_only_fields = ("id",)
 
-class StudentSerializer(serializers.ModelSerializer):
+class StudentSerializerReadOnly(serializers.ModelSerializer):
     class Meta:
         model = Student
         # need to add Class
@@ -107,7 +107,7 @@ class StudentSerializer(serializers.ModelSerializer):
         read_only_fields = ("id", "name", "email", "type")
 
     def to_representation(self, instance):
-        data = super(StudentSerializer, self).to_representation(instance)
+        data = super(StudentSerializerReadOnly, self).to_representation(instance)
 
         # print(StudentClass.objects.filter(student=instance.id).last().class_year._class.degree)
         student_class = StudentClass.objects.filter(student=instance.id).last()
@@ -150,7 +150,7 @@ class StudentParentSerializer(serializers.ModelSerializer):
 
 # NOT BEING USED
 # class ClassSerializerAllStudents(serializers.ModelSerializer):
-#     students = StudentSerializer(read_only=True, many=True)
+#     students = StudentSerializerReadOnly(read_only=True, many=True)
 
 #     class Meta:
 #         model = Class
@@ -204,7 +204,7 @@ class TeacherSubjectSerializerReadOnly(serializers.ModelSerializer):
         read_only_fields = ("id",)
 
 class ClassYearSerializerAllStudents(serializers.ModelSerializer):
-    students = StudentSerializer(read_only=True, many=True)
+    students = StudentSerializerReadOnly(read_only=True, many=True)
     _class = ClassSerializer(read_only=True)
     class Meta:
         model = ClassYear
@@ -225,7 +225,7 @@ class ClassYearTeacherSubjectSerializer(serializers.ModelSerializer):
         read_only_fields = ("id",)
 
 class ClassYearTeacherSubjectSerializerReadOnly(serializers.ModelSerializer):
-    # teacher_subject = TeacherSubjectSerializerReadOnly()
+    teacher_subject = TeacherSubjectSerializerReadOnly()
     class_year = ClassYearSerializerReadOnly(read_only=True)
     class Meta:
         model = ClassYearTeacherSubject
@@ -273,20 +273,6 @@ class GradeSerializer(serializers.ModelSerializer):
         data = super(GradeSerializer, self).to_representation(instance)
 
         fill_grades(instance, data)
-        # if instance.av1_1 and instance.av2_1:
-            # data["mu_1"] = Grade.get_final_grade(instance.av1_1, instance.av2_1)
-
-        # if instance.av1_1 and instance.av2_1 and instance.noa_1:
-        #     higher = higher_grade(instance.av1_1, instance.av2_1)
-        #     data["mu_1"] = Grade.get_final_grade(instance.noa_1, higher)
-
-        # if instance.av1_2 and instance.av2_2:
-        #     data["mu_2"] = Grade.get_final_grade(instance.av1_2, instance.av2_2)
-
-        # if instance.av1_3 and instance.av2_3:
-        #     data["mu_3"] = Grade.get_final_grade(instance.av1_3, instance.av2_3)
-
-
         return data
 
 class AllGradesTableSerializer(serializers.ModelSerializer):
@@ -296,7 +282,28 @@ class AllGradesTableSerializer(serializers.ModelSerializer):
         fields = ["id", "grade", "type", "subject"]
         read_only_fields = ("id",)
 
+class AttendanceSerializer(serializers.ModelSerializer):
+    student = StudentSerializerReadOnly(read_only=True)
+    class Meta:
+        model = Attendance
+        fields = ["student", "class_year_teacher_subject", "type", "day", "created_at"]
+        read_only_fields = ("id",)
+
 class TimeScheduleSerializer(serializers.ModelSerializer):
+    monday_class_year_teacher_subject = ClassYearTeacherSubjectSerializerReadOnly(read_only=True)
+    tuesday_class_year_teacher_subject = ClassYearTeacherSubjectSerializerReadOnly(read_only=True)
+    wednesday_class_year_teacher_subject = ClassYearTeacherSubjectSerializerReadOnly(read_only=True)
+    thursday_class_year_teacher_subject = ClassYearTeacherSubjectSerializerReadOnly(read_only=True)
+    friday_class_year_teacher_subject = ClassYearTeacherSubjectSerializerReadOnly(read_only=True)
+    class_year = ClassYearSerializerReadOnly(read_only=True)
     class Meta:
         model = TimeSchedule
-        fields = ["day"]
+        fields = [
+            "id", "hour", "minute",
+            "monday_class_year_teacher_subject",
+            "tuesday_class_year_teacher_subject",
+            "wednesday_class_year_teacher_subject",
+            "thursday_class_year_teacher_subject",
+            "friday_class_year_teacher_subject",
+            "class_year"
+        ]

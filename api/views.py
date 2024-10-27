@@ -22,6 +22,12 @@ from django.db import transaction, connection, reset_queries
 from django.db.utils import IntegrityError
 from itertools import islice
 
+import pytz
+import datetime
+from datetime import timedelta
+
+# datetime.datetime.now(datetime.timezone.utc)
+
 class CustomAPIView(APIView):
     def get_permissions(self):
         # Instances and returns the dict of permissions that the view requires.
@@ -116,7 +122,7 @@ class SignupStudent(CustomAPIView):
         except:
             return Response({"detail":"Erro ao persistir no banco de dados."}, status=status.HTTP_400_BAD_REQUEST)
 
-        student_serializer_readonly = StudentSerializer(student)
+        student_serializer_readonly = StudentSerializerReadOnly(student)
         # refresh = CustomTokenObtainPairSerializer.get_token(student)
         # data = {
         #     "refresh":str(refresh),
@@ -202,7 +208,7 @@ class StudentView(CustomAPIView):
             return Response(student_serializer.data, status=status.HTTP_200_OK)
 
         student = Student.objects.all()
-        student_serializer = StudentSerializer(student, many=True)
+        student_serializer = StudentSerializerReadOnly(student, many=True)
         return Response({"students":student_serializer.data}, status=status.HTTP_200_OK)
 
     def delete(self, request, pk=None, format=None):
@@ -346,7 +352,7 @@ class TeacherSubjectView(CustomAPIView):
                 batch = list(islice(objs, batch_size))
                 teacher_subject = TeacherSubject.objects.bulk_create(batch, batch_size, unique_fields=["teacher", "subject"])
                 teacher_subject_serializer = TeacherSubjectSerializerReadOnly(teacher_subject, many=True)
-                return Response({"detail":"Professor atribuído a disciplina", "teacher_disciplina":teacher_subject_serializer.data}, status=status.HTTP_201_CREATED)
+                return Response({"detail":"Professor atribuído a disciplina", "teacher_subject":teacher_subject_serializer.data}, status=status.HTTP_201_CREATED)
         except:
             return Response({"detail":"Erro ao persistir no banco de dados. Tenha certeza de que os ID's são válidos."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -403,6 +409,12 @@ class ClassView(CustomAPIView):
 class ClassYearView(CustomAPIView):
     permission_classes = {"get":[IsAuthenticated], "post":[IsAdmin], "put":[IsAdmin], "delete":[IsAdmin]}
     def get(self, request, pk=None, format=None):
+        # TODO: Pass year in path
+        if pk:
+            class_year = ClassYear.objects.filter(year=timezone.now().year, pk=pk)
+            class_year_serializer = ClassYearSerializerReadOnly(class_year)
+            return Response({"class_year": class_year_serializer.data}, status=status.HTTP_200_OK)
+
         class_year = ClassYear.objects.filter(year=timezone.now().year)
         class_year_serializer = ClassYearSerializerReadOnly(class_year, many=True)
         return Response({"class_years": class_year_serializer.data}, status=status.HTTP_200_OK)
@@ -549,6 +561,129 @@ class GradeView(CustomAPIView):
         except:
             return Response({"detail":"Erro ao persistir no banco de dados. Tenha certeza de que os ID's são válidos."}, status=status.HTTP_400_BAD_REQUEST)
 
+class AttendanceView(CustomAPIView):
+    permission_classes = {"get":[IsAuthenticated], "post":[IsTeacher]}
+
+    # path params: class_year, teacher_subject
+    # query params: date
+    def get(self, request, class_year=None, teacher_subject=None):
+        today = timezone.now()
+        date = request.query_params.get("date", f"{today.year}-{today.month}-{today.day}")
+        class_year_teacher_subject = get_object_or_404(ClassYearTeacherSubject, class_year_id=class_year, teacher_subject_id=teacher_subject)
+
+        if not teacher_subject:
+            return Response({"detail":"Procure com uma disciplina"}, status=status.HTTP_400_BAD_REQUEST)
+        date_format = '%Y-%m-%d'
+        date_obj = timezone.datetime.strptime(date, date_format)
+        day = date_obj.day
+        attendances = Attendance.objects.filter(class_year_teacher_subject=class_year_teacher_subject, created_at__day=day)
+        attendace_serializer = AttendanceSerializer(attendances, many=True)
+
+        return Response({"attendances": attendace_serializer.data}, status=status.HTTP_200_OK)
+
+    # attendaces = {
+    #   student: {id, type}
+    #   class_year
+    #   teacher_subject
+    # }
+    def post(self, request, class_year=None, teacher_subject=None):
+        attendances = request.data["attendances"]
+        class_year_id = request.data["class_year"]
+
+        date_now = timezone.localtime(timezone.now())
+        start_of_day = date_now.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_of_day = start_of_day + timedelta(hours=23, minutes=59, seconds=59)
+        remaining = 15
+        day = timezone.now()
+        # attendances_same_day = Attendance.objects.filter(class_year_teacher_subject__class_year_id=class_year_id, created_at__date=day)
+        attendances_same_day = Attendance.objects.filter(class_year_teacher_subject__class_year_id=class_year_id,
+                                                         created_at__gte=start_of_day,
+                                                         created_at__lt=end_of_day)
+
+        if len(attendances_same_day) > 0:
+            delta = (day - attendances_same_day[0].created_at)
+            remaining -= int(delta.seconds / 60)
+
+        if remaining < 0:
+            return Response({"detail":"Você não pode mais atribuir presença nesse dia."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            with transaction.atomic():
+                class_year_teacher_subject = get_object_or_404(
+                    ClassYearTeacherSubject,
+                    class_year_id=class_year_id,
+                    teacher_subject_id=request.data["teacher_subject"]
+                )
+
+                objs = (
+                    Attendance(
+                        student_id=attendance.get("student", None)["id"],
+                        class_year_teacher_subject=class_year_teacher_subject,
+                        type=attendance["type"],
+                        day=date_now.day
+                    )
+                    for attendance in attendances
+                )
+                batch_size = len(attendances)
+                batch = list(islice(objs, batch_size))
+                attendances_data = Attendance.objects.bulk_create(batch, batch_size, update_conflicts=True,
+                                                                update_fields=["type"], unique_fields=["student", "class_year_teacher_subject", "day"])
+
+                attendance_serializer = AttendanceSerializer(attendances_data, many=True)
+
+                return Response({"detail":"Presença atribuída.", "attendances":attendance_serializer.data, "remaining":remaining}, status=status.HTTP_201_CREATED)
+        except:
+            return Response({"detail":"Erro ao persistir no banco de dados. Tenha certeza de que os ID's são válidos."}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response()
+
+class TimeScheduleView(APIView):
+    def get(self, request, class_year=None, year=timezone.now().year):
+        class_year = request.query_params.get("class_year", None)
+        time_schedules = TimeSchedule.objects.filter(class_year=class_year)
+        time_schedule_serializer = TimeScheduleSerializer(time_schedules, many=True)
+        return Response({"time_schedules": time_schedule_serializer.data}, status=status.HTTP_200_OK)
+
+    def post(self, request, class_year=None, year=timezone.now().year):
+        time_schedules = request.data["time_schedules"]
+
+        # try:
+        with transaction.atomic():
+            objs = (
+                TimeSchedule(
+                    # id=time_schedule.pop("id", None),
+                    class_year_id=time_schedule.pop("class_year", None),
+                monday_class_year_teacher_subject_id=time_schedule.pop("monday_class_year_teacher_subject", None),
+                tuesday_class_year_teacher_subject_id=time_schedule.pop("tuesday_class_year_teacher_subject", None),
+                wednesday_class_year_teacher_subject_id=time_schedule.pop("wednesday_class_year_teacher_subject", None),
+                thursday_class_year_teacher_subject_id=time_schedule.pop("thursday_class_year_teacher_subject", None),
+                friday_class_year_teacher_subject_id=time_schedule.pop("friday_class_year_teacher_subject", None),
+                    **time_schedule
+                )
+                for time_schedule in time_schedules
+            )
+
+            batch_size = len(time_schedules)
+            batch = list(islice(objs, batch_size))
+            time_schedules_data = TimeSchedule.objects.bulk_create(batch, batch_size, update_conflicts=True,
+                                                            update_fields=[
+                                                                "monday_class_year_teacher_subject",
+                                                                "tuesday_class_year_teacher_subject",
+                                                                "wednesday_class_year_teacher_subject",
+                                                                "thursday_class_year_teacher_subject",
+                                                                "friday_class_year_teacher_subject",
+                                                            ], unique_fields=["id"])
+
+            time_schedule_serializer = TimeScheduleSerializer(time_schedules_data, many=True)
+            return Response({"detail":"Horário atribuído com sucesso.", "time_schedules":time_schedule_serializer.data}, status=status.HTTP_201_CREATED)
+        # except:
+        #     return Response({"detail":"Erro ao persistir no banco de dados. Tenha certeza de que os ID's são válidos."}, status=status.HTTP_400_BAD_REQUEST)
+
+
+        # return Response({"detail":"Horário atribuído.", "time_schedules":None}, status=status.HTTP_201_CREATED)
+
+
+
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -556,6 +691,17 @@ def TeacherAllSubjects(request, pk=None):
     teacher_subject = TeacherSubject.objects.filter(teacher_id=pk)
     teacher_subject_serializer = TeacherSubjectSerializerReadOnly(teacher_subject, many=True)
     return Response({"teacher": teacher_subject_serializer.data}, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def TeacherAllSubjectsFromClass(request, _class_pk=None, year=None, teacher_pk=None):
+    class_year = get_object_or_404(ClassYear, _class_id=_class_pk, year=year)
+    class_year_teacher_subject_serializer = ClassYearTeacherSubjectSerializerReadOnly(
+        ClassYearTeacherSubject.objects.filter(class_year_id=class_year, teacher_subject__teacher_id=teacher_pk),
+        many=True
+    )
+    data = [dict["teacher_subject"] for dict in class_year_teacher_subject_serializer.data]
+    return Response({"teacher_subject":data}, status=status.HTTP_200_OK)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -573,14 +719,23 @@ def TeacherAllClasses(request, pk=None):
 
     data = {}
     for cyts in class_year_teacher_subject_serializer.data:
-        if data.get("class_year"):
-            continue
+        # if data.get("class_year"):
+        #     continue
         data[cyts["class_year"]["_class"]["id"]] = cyts["class_year"]["_class"]
     response = [ value for key, value in data.items() ]
 
     return Response({"classes": response}, status=status.HTTP_200_OK)
 
+@api_view(['GET'])
+def AllTeacherSubjectFromClass(request, class_year):
+    class_year_teacher_subjects = ClassYearTeacherSubject.objects.filter(class_year_id=class_year)
+    class_year_teacher_subjects_serializer = ClassYearTeacherSubjectSerializerReadOnly(class_year_teacher_subjects, many=True)
 
+    # data = []
+    # for cyts in class_year_teacher_subjects_serializer.data:
+    #     data.append(cyts["teacher_subject"])
+
+    return Response({"detail":"Todos os professores da classe", "class_year_teacher_subjects":class_year_teacher_subjects_serializer.data}, status=status.HTTP_200_OK)
 
 
 
@@ -603,9 +758,11 @@ def hello_world(request):
     # print(teacher_subject)
     # print(ClassYearTeacherSubject.objects.filter(teacher_subject__teacher_id=36))
     # print(ClassYearTeacherSubjectSerializerReadOnly(ClassYearTeacherSubject.objects.filter(teacher_subject__teacher_id=36), many=True).data)
-    print(User.objects.all())
-    print(User.objects.filter(email="admin@gmail.com"))
-    print(User.objects.get(email="admin@gmail.com"))
-    print(User.objects.get(email="admin@gmail.com"))
+    # print(User.objects.all())
+    # print(User.objects.filter(email="admin@gmail.com"))
+    # print(User.objects.get(email="admin@gmail.com"))
+    # print(User.objects.get(email="admin@gmail.com"))
+    teste = [User(id=1)]
+    print("a", teste)
     # print(User.objects.all())
     return Response({"message": {}})

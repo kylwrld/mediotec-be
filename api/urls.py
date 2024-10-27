@@ -16,7 +16,6 @@ urlpatterns = [
     path("signup/", views.Signup.as_view(), name="signup"),
     path("login/", views.Login.as_view(), name="login"),
 
-    # refactored to accept id in body instead of url pattern
     path("student/", views.StudentView.as_view(), name="student"),
     path("student/<int:pk>/", views.StudentView.as_view(), name="student_id"),
 
@@ -26,8 +25,8 @@ urlpatterns = [
     path("teacher/", views.TeacherView.as_view(), name="teacher"),
     path("teacher/<int:pk>/", views.TeacherView.as_view(), name="teacher_id"),
     path("teacher/<int:pk>/subjects/", views.TeacherAllSubjects, name="teacher_id_subjects"),
+    path("teacher/<int:_class_pk>/<int:year>/<int:teacher_pk>/", views.TeacherAllSubjectsFromClass, name="teacher_subjects_class"),
     path("teacher/<int:pk>/classes/", views.TeacherAllClasses, name="teacher_id_classes"),
-    # TODO: TEACHER SIGNUP VIEW
 
     path("subject/", views.SubjectView.as_view(), name="subject"),
     path("subject/<int:pk>/", views.SubjectView.as_view(), name="subject_id"),
@@ -35,6 +34,7 @@ urlpatterns = [
 
     path("teacher_subject/", views.TeacherSubjectView.as_view(), name="teacher_subject"),
     path("teacher_subject/<int:pk>/", views.TeacherSubjectView.as_view(), name="teacher_subject_id"),
+    path("all_teacher_subject_class/<int:class_year>/", views.AllTeacherSubjectFromClass, name="all_teacher_subject_class_id"),
 
     path("class/", views.ClassView.as_view(), name="class"),
     path("class/<int:pk>/", views.ClassView.as_view(), name="class_id"),
@@ -56,6 +56,12 @@ urlpatterns = [
 
     path("grade/", views.GradeView.as_view(), name="grade"),
     path("grade/<int:student_pk>/<int:year>/", views.GradeView.as_view(), name="grade_id"),
+
+    path("attendance/", views.AttendanceView.as_view(), name="attendance"),
+    path("attendance/<int:class_year>/<int:teacher_subject>/", views.AttendanceView.as_view(), name="attendance_id"),
+
+    path("time_schedule/", views.TimeScheduleView.as_view(), name="time_schedule"),
+
 
 
     path("teste/", views.hello_world, name="teste"),

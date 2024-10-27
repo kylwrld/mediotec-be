@@ -6,32 +6,31 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db.models import Q
 from django.utils import timezone
 
-# class UserManager(BaseUserManager):
+class UserManager(BaseUserManager):
+    def create_user(self, email, password=None):
+        if email is None:
+            raise TypeError('Users must have an email address.')
 
-#     def create_user(self, email, password=None):
+        user = self.model(email=self.normalize_email(email))
+        user.set_password(password)
+        user.birth_date = timezone.now()
+        user.save()
 
-#         if email is None:
-#             raise TypeError('Users must have an email address.')
+        return user
 
-#         user = self.model(email=self.normalize_email(email))
-#         user.set_password(password)
-#         user.birth_date = timezone.now()
-#         user.save()
+    def create_superuser(self, email, password):
+        if password is None:
+            raise TypeError('Superusers must have a password.')
 
-#         return user
+        user = self.create_user(email, password)
+        user.type = User.Types.ADMIN
+        user.birth_date = timezone.now()
+        user.is_superuser = True
+        user.is_staff = True
+        user.is_active = True
+        user.save()
 
-#     def create_superuser(self, email, password):
-
-#         if password is None:
-#             raise TypeError('Superusers must have a password.')
-
-#         user = self.create_user(email, password)
-#         user.is_superuser = True
-#         user.is_staff = True
-#         user.birth_date = timezone.now()
-#         user.save()
-
-#         return user
+        return user
 
 class User(AbstractUser):
     name = models.CharField(max_length=70, null=False, blank=False)
@@ -40,7 +39,7 @@ class User(AbstractUser):
     entry_date = models.DateField(auto_now_add=True)
     end_date = models.DateField(null=True)
 
-    # objects = UserManager()
+    objects = UserManager()
 
     class Types(models.TextChoices):
         ADMIN = "ADMIN", "Admin"
@@ -245,13 +244,28 @@ class TimeSchedule(models.Model):
         SABADO = "SABADO", "SABADO"
         DOMINGO = "DOMINGO", "DOMINGO"
 
-    day = models.CharField(max_length=7, choices=Days.choices)
+    # day = models.CharField(max_length=7, choices=Days.choices)
     hour = models.IntegerField(validators=[MinValueValidator(7), MaxValueValidator(18)])
     minute = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(59)])
-    class_year_teacher_subject = models.ForeignKey(ClassYearTeacherSubject, on_delete=models.CASCADE)
 
-    class Meta:
-        unique_together = [['day', 'hour', 'minute', 'class_year_teacher_subject']]
+    monday_class_year_teacher_subject = models.ForeignKey(
+        ClassYearTeacherSubject, on_delete=models.CASCADE, null=True, blank=True, related_name="monday")
+    tuesday_class_year_teacher_subject = models.ForeignKey(
+        ClassYearTeacherSubject, on_delete=models.CASCADE, null=True, blank=True, related_name="tuesday")
+    wednesday_class_year_teacher_subject = models.ForeignKey(
+        ClassYearTeacherSubject, on_delete=models.CASCADE, null=True, blank=True, related_name="wednesday")
+    thursday_class_year_teacher_subject = models.ForeignKey(
+        ClassYearTeacherSubject, on_delete=models.CASCADE, null=True, blank=True, related_name="thursday")
+    friday_class_year_teacher_subject = models.ForeignKey(
+        ClassYearTeacherSubject, on_delete=models.CASCADE, null=True, blank=True, related_name="friday")
+
+    class_year = models.ForeignKey(ClassYear, on_delete=models.CASCADE)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    # class Meta:
+    #     unique_together = [['hour', 'minute', 'class_year']]
 
 class Attendance(models.Model):
     class Types(models.TextChoices):
@@ -260,10 +274,14 @@ class Attendance(models.Model):
         PRESENTE = "PRESENTE", "PRESENTE"
 
     type = models.CharField(max_length=11, choices=Types.choices)
-    user = models.ForeignKey(Student, related_name="attendances", on_delete=models.CASCADE)
+    student = models.ForeignKey(Student, related_name="attendances", on_delete=models.CASCADE)
     class_year_teacher_subject = models.ForeignKey(ClassYearTeacherSubject, on_delete=models.CASCADE)
+    day = models.PositiveSmallIntegerField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = [["student", "class_year_teacher_subject", "day"]]
 
 
 # class Hours(models.Choices):
