@@ -204,9 +204,9 @@ AUTH_USER_MODEL = 'api.User'
 
 ALLOWED_HOSTS = ["https://mediotec-fe.onrender.com"]
 
-CORS_ALLOWED_ORIGINS = [
-    "https://mediotec-fe.onrender.com",
-]
+# CORS_ALLOWED_ORIGINS = [
+#     "https://mediotec-fe.onrender.com",
+# ]
 
 LANGUAGE_CODE = "pt-br"
 # ACCOUNT_USER_MODEL_USERNAME_FIELD = "email"
