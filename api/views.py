@@ -590,11 +590,8 @@ class AttendanceView(CustomAPIView):
         attendances = request.data["attendances"]
         class_year_id = request.data["class_year"]
 
-               class_year_teacher_subject = get_object_or_404(
-                    ClassYearTeacherSubject,
-                    class_year_id=class_year_id,
-                    teacher_subject_id=request.data["teacher_subject"]
-                )
+        class_year_teacher_subject = get_object_or_404(
+        ClassYearTeacherSubject, class_year_id=class_year_id, teacher_subject_id=request.data["teacher_subject"])
 
         date_now = timezone.localtime(timezone.now())
         start_of_day = date_now.replace(hour=0, minute=0, second=0, microsecond=0)
