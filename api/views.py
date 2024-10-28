@@ -590,13 +590,19 @@ class AttendanceView(CustomAPIView):
         attendances = request.data["attendances"]
         class_year_id = request.data["class_year"]
 
+               class_year_teacher_subject = get_object_or_404(
+                    ClassYearTeacherSubject,
+                    class_year_id=class_year_id,
+                    teacher_subject_id=request.data["teacher_subject"]
+                )
+
         date_now = timezone.localtime(timezone.now())
         start_of_day = date_now.replace(hour=0, minute=0, second=0, microsecond=0)
         end_of_day = start_of_day + timedelta(hours=23, minutes=59, seconds=59)
         remaining = 15
         day = timezone.now()
-        # attendances_same_day = Attendance.objects.filter(class_year_teacher_subject__class_year_id=class_year_id, created_at__date=day)
-        attendances_same_day = Attendance.objects.filter(class_year_teacher_subject__class_year_id=class_year_id,
+        # attendances_same_day = Attendance.objects.filter(class_year_teacher_subject=class_year_teacher_subject, created_at__date=day)
+        attendances_same_day = Attendance.objects.filter(class_year_teacher_subject=class_year_teacher_subject,
                                                          created_at__gte=start_of_day,
                                                          created_at__lt=end_of_day)
 
@@ -609,11 +615,6 @@ class AttendanceView(CustomAPIView):
 
         try:
             with transaction.atomic():
-                class_year_teacher_subject = get_object_or_404(
-                    ClassYearTeacherSubject,
-                    class_year_id=class_year_id,
-                    teacher_subject_id=request.data["teacher_subject"]
-                )
 
                 objs = (
                     Attendance(
