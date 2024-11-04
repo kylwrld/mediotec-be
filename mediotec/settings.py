@@ -71,7 +71,7 @@ SPECTACULAR_SETTINGS = {
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=30),
     "ROTATE_REFRESH_TOKENS": False,
     "BLACKLIST_AFTER_ROTATION": False,
     "UPDATE_LAST_LOGIN": False,
@@ -203,10 +203,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'api.User'
 
 ALLOWED_HOSTS = ['*']
-# CORS_ALLOWED_ORIGINS = [
-#    "https://mediotec-fe.onrender.com",
-# ]
-CORS_ALLOWED_ORIGINS = ["*"]
+CORS_ALLOWED_ORIGINS = [
+   "https://mediotec-fe.onrender.com",
+]
+
+CORS_ALLOW_ALL_ORIGINS = True
 
 LANGUAGE_CODE = "pt-br"
 # ACCOUNT_USER_MODEL_USERNAME_FIELD = "email"

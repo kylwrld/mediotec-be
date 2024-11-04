@@ -53,6 +53,8 @@ class CustomRefreshToken(RefreshToken):
         token['id'] = user.id
         token['name'] = user.name
         token['type'] = user.type
+        if user.type == User.Types.STUDENT:
+            token["class_id"] = StudentClass.objects.filter(student=user.id).last().id
 
         if api_settings.CHECK_REVOKE_TOKEN:
             token[api_settings.REVOKE_TOKEN_CLAIM] = get_md5_hash_password(
@@ -517,7 +519,7 @@ class CommentView(CustomAPIView):
         comment_serializer = CommentSerializer(data=request.data)
         comment_serializer.is_valid(raise_exception=True)
         comment_serializer.save(user=request.user)
-        return Response({"detail":"Comentário criado.", "comentario":comment_serializer.data})
+        return Response({"detail":"Comentário criado.", "comment":comment_serializer.data})
 
     def delete(self, request, pk=None, format=None):
         comment = get_object_or_404(Comment, pk=pk)
@@ -535,10 +537,13 @@ class GradeView(CustomAPIView):
     permission_classes = {"get":[IsAuthenticated], "post":[IsTeacher]}
 
     def get(self, request, student_pk=None, year=timezone.now().year, format=None):
+        if request.user == User.Types.STUDENT:
+            if int(request.user.id) != int(student_pk):
+                return Response({"detail":"Estudantes somente podem visualizar os próprios conceitos."}, status=status.HTTP_400_BAD_REQUEST)
+
         grades = Grade.objects.filter(student=student_pk, year=year)
         grades_serializer = GradeSerializer(grades, many=True)
         return Response({"grades":grades_serializer.data}, status=status.HTTP_200_OK)
-
 
     # TODO: Change to check if grade already exists before creating
     def post(self, request, student_pk=None, year=timezone.now().year, format=None):
@@ -760,7 +765,6 @@ def hello_world(request):
     # print(User.objects.filter(email="admin@gmail.com"))
     # print(User.objects.get(email="admin@gmail.com"))
     # print(User.objects.get(email="admin@gmail.com"))
-    teste = [User(id=1)]
-    print("a", teste)
     # print(User.objects.all())
+    print(len(Attendance.objects.filter(student=4)))
     return Response({"message": {}})

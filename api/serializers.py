@@ -114,9 +114,11 @@ class StudentSerializerReadOnly(serializers.ModelSerializer):
         if student_class:
             data['degree'] = student_class.class_year._class.degree
             data['class_year'] = ClassYearSerializerReadOnly(student_class.class_year).data
+            data["attendances"] = len(Attendance.objects.filter(student=instance.id))
         else:
             data['degree'] = None
             data['class_year'] = None
+            data["attendances"] = None
 
         return data
 
@@ -147,6 +149,20 @@ class StudentParentSerializer(serializers.ModelSerializer):
         fields = ["id", "name", "email", "type", "parents"]
         read_only_fields = ("id", "name", "email", "type")
 
+    def to_representation(self, instance):
+        data = super(StudentParentSerializer, self).to_representation(instance)
+
+        student_class = StudentClass.objects.filter(student=instance.id).last()
+        if student_class:
+            data['degree'] = student_class.class_year._class.degree
+            data['class_year'] = ClassYearSerializerReadOnly(student_class.class_year).data
+            data["attendances"] = len(Attendance.objects.filter(student=instance.id))
+        else:
+            data['degree'] = None
+            data['class_year'] = None
+            data["attendances"] = None
+
+        return data
 
 # NOT BEING USED
 # class ClassSerializerAllStudents(serializers.ModelSerializer):
@@ -233,9 +249,10 @@ class ClassYearTeacherSubjectSerializerReadOnly(serializers.ModelSerializer):
         read_only_fields = ("id",)
 
 class CommentSerializer(serializers.ModelSerializer):
+    user = UserSerializerReadOnly(read_only=True)
     class Meta:
         model = Comment
-        fields = ["id", "body", "announcement"]
+        fields = ["id", "body", "announcement", "user", "created_at", "updated_at"]
         read_only_fields = ("id",)
 
 class AnnouncementSerializer(serializers.ModelSerializer):
