@@ -31,7 +31,7 @@ environ.Env.read_env()
 SECRET_KEY = env("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 
 # Application definition
@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'corsheaders',
+    'cloudinary',
     'api',
     'django_extensions',
     'rest_framework',
@@ -203,11 +204,32 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'api.User'
 
 ALLOWED_HOSTS = ['*']
-CORS_ALLOWED_ORIGINS = [
-   "https://mediotec-fe.onrender.com",
-]
+# CORS_ALLOWED_ORIGINS = [
+#    "https://mediotec-fe.onrender.com",
+# ]
 
 CORS_ALLOW_ALL_ORIGINS = True
 
 LANGUAGE_CODE = "pt-br"
 # ACCOUNT_USER_MODEL_USERNAME_FIELD = "email"
+
+CORS_ALLOW_HEADERS = (
+    "accept",
+    "authorization",
+    "content-type",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+    "content-disposition",
+)
+
+import cloudinary
+
+cloudinary.config(
+    cloud_name="dfga9xwlg",
+    api_key="431587829435561",
+    api_secret="H-3TvBSUU13oP2bxAjr1p24YCY8",
+)
+
+import cloudinary.uploader
+import cloudinary.api

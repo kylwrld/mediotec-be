@@ -1,3 +1,4 @@
+from cloudinary.models import CloudinaryField, CloudinaryResource
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from enum import Enum
@@ -6,31 +7,31 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db.models import Q
 from django.utils import timezone
 
-class UserManager(BaseUserManager):
-    def create_user(self, email, password=None):
-        if email is None:
-            raise TypeError('Users must have an email address.')
+# class UserManager(BaseUserManager):
+#     def create_user(self, email, password=None):
+#         if email is None:
+#             raise TypeError('Users must have an email address.')
 
-        user = self.model(email=self.normalize_email(email))
-        user.set_password(password)
-        user.birth_date = timezone.now()
-        user.save()
+#         user = self.model(email=self.normalize_email(email))
+#         user.set_password(password)
+#         user.birth_date = timezone.now()
+#         user.save()
 
-        return user
+#         return user
 
-    def create_superuser(self, email, password):
-        if password is None:
-            raise TypeError('Superusers must have a password.')
+#     def create_superuser(self, email, password):
+#         if password is None:
+#             raise TypeError('Superusers must have a password.')
 
-        user = self.create_user(email, password)
-        user.type = User.Types.ADMIN
-        user.birth_date = timezone.now()
-        user.is_superuser = True
-        user.is_staff = True
-        user.is_active = True
-        user.save()
+#         user = self.create_user(email, password)
+#         user.type = User.Types.ADMIN
+#         user.birth_date = timezone.now()
+#         user.is_superuser = True
+#         user.is_staff = True
+#         user.is_active = True
+#         user.save()
 
-        return user
+#         return user
 
 class User(AbstractUser):
     name = models.CharField(max_length=70, null=False, blank=False)
@@ -38,8 +39,9 @@ class User(AbstractUser):
     birth_date = models.DateField()
     entry_date = models.DateField(auto_now_add=True)
     end_date = models.DateField(null=True)
+    image = CloudinaryField("image", null=True, blank=True)
 
-    objects = UserManager()
+    # objects = UserManager()
 
     class Types(models.TextChoices):
         ADMIN = "ADMIN", "Admin"

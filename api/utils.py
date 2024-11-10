@@ -2,6 +2,14 @@ from django.core.exceptions import ValidationError
 from functools import wraps
 from enum import Enum
 
+import environ
+env = environ.Env()
+environ.Env.read_env()
+
+CLOUDINARY_BASE_PATH = "https://res.cloudinary.com/"
+CLOUDINARY_CLOUD_NAME = "dfga9xwlg"
+CLOUDINARY_FULL_BASE_PATH = CLOUDINARY_BASE_PATH + CLOUDINARY_CLOUD_NAME + "/"
+
 def check_fields(request, fields: list):
     errors = {}
     for field in fields:

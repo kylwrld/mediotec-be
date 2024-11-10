@@ -55,7 +55,7 @@ class SignupStudentSerializer(serializers.ModelSerializer):
     parents = ParentSerializer(read_only=True, many=True)
     class Meta:
         model = Student
-        fields = ["id", "name", "email", "password", "birth_date", "parents"]
+        fields = ["id", "name", "email", "password", "birth_date", "parents", "image"]
         read_only_fields = ("id",)
 
     def create(self, validated_data):
@@ -103,13 +103,15 @@ class StudentSerializerReadOnly(serializers.ModelSerializer):
     class Meta:
         model = Student
         # need to add Class
-        fields = ["id", "name", "email", "type"]
-        read_only_fields = ("id", "name", "email", "type")
+        fields = ["id", "name", "email", "type", "image"]
+        read_only_fields = ("id", "name", "email", "type", "image")
 
     def to_representation(self, instance):
         data = super(StudentSerializerReadOnly, self).to_representation(instance)
 
-        # print(StudentClass.objects.filter(student=instance.id).last().class_year._class.degree)
+        if data.get("image", None) is not None:
+            data["image"] = CLOUDINARY_FULL_BASE_PATH + data["image"]
+
         student_class = StudentClass.objects.filter(student=instance.id).last()
         if student_class:
             data['degree'] = student_class.class_year._class.degree
@@ -126,10 +128,14 @@ class StudentSerializerWrite(serializers.ModelSerializer):
     class Meta:
         model = Student
         # need to add Class
-        fields = ["id", "name", "email"]
+        fields = ["id", "name", "email", "image"]
 
     def to_representation(self, instance):
         data = super(StudentSerializerWrite, self).to_representation(instance)
+
+        if data.get("image", None) is not None:
+            data["image"] = CLOUDINARY_FULL_BASE_PATH + data["image"]
+
 
         # print(StudentClass.objects.filter(student=instance.id).last().class_year._class.degree)
         student_class = StudentClass.objects.filter(student=instance.id).last()
@@ -146,11 +152,14 @@ class StudentParentSerializer(serializers.ModelSerializer):
     parents = ParentSerializer(read_only=True, many=True)
     class Meta:
         model = Student
-        fields = ["id", "name", "email", "type", "parents"]
-        read_only_fields = ("id", "name", "email", "type")
+        fields = ["id", "name", "email", "type", "parents", "image"]
+        read_only_fields = ("id", "name", "email", "type", "image")
 
     def to_representation(self, instance):
         data = super(StudentParentSerializer, self).to_representation(instance)
+
+        if data.get("image", None) is not None:
+            data["image"] = CLOUDINARY_FULL_BASE_PATH + data["image"]
 
         student_class = StudentClass.objects.filter(student=instance.id).last()
         if student_class:
@@ -264,9 +273,11 @@ class AnnouncementSerializer(serializers.ModelSerializer):
         fields = ["id", "title", "body", "fixed", "class_year", "user", "comments", "created_at"]
         read_only_fields = ("id", "comments", "created_at", "user")
 
+# add class_year serializer might break something
 class AnnouncementSerializerReadOnly(serializers.ModelSerializer):
     comments = CommentSerializer(read_only=True, many=True)
-    user = UserSerializerReadOnly()
+    user = UserSerializerReadOnly(read_only=True)
+    class_year = ClassYearSerializerReadOnly(read_only=True)
 
     class Meta:
         model = Announcement

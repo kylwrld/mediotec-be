@@ -1,3 +1,4 @@
+from django.http import QueryDict
 from django.shortcuts import render,  get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view, permission_classes
@@ -15,7 +16,13 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenObtainSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.settings import api_settings
+from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
+
+
+import json
 from .utils import *
 from django.utils import timezone
 from django.db import transaction, connection, reset_queries
@@ -53,8 +60,11 @@ class CustomRefreshToken(RefreshToken):
         token['id'] = user.id
         token['name'] = user.name
         token['type'] = user.type
+
         if user.type == User.Types.STUDENT:
-            token["class_id"] = StudentClass.objects.filter(student=user.id).last().id
+            _class = StudentClass.objects.filter(student=user.id).last()
+            if _class is not None:
+                token["class_id"] = _class.id
 
         if api_settings.CHECK_REVOKE_TOKEN:
             token[api_settings.REVOKE_TOKEN_CLAIM] = get_md5_hash_password(
@@ -93,17 +103,24 @@ class Signup(CustomAPIView):
 
 
 class SignupStudent(CustomAPIView):
+    parser_classes = (JSONParser, MultiPartParser)
     permission_classes = {"post":[IsAdmin]}
     # name, email, password,
     # parent {name, cpf}
     # phone [{ddd, number}, ...]
     def post(self, request, format=None):
-        parent_data = request.data.pop("parent", False)
-        phone_data = request.data.pop("phone", False)
+        data = request.data.dict()
+
+        parent_data = data.pop("parent", False)
+        phone_data = data.pop("phone", False)
         if not parent_data:
             return Response({"detail":"Campo parent é obrigatório."}, status=status.HTTP_400_BAD_REQUEST)
         if not phone_data:
             return Response({"detail":"Campo phone é obrigatório."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if isinstance(request.data, QueryDict):
+            parent_data = json.loads(parent_data)
+            phone_data = json.loads(phone_data)
 
         student_serializer = SignupStudentSerializer(data=request.data)
         parent_serializer = ParentSerializer(data=parent_data)
@@ -202,6 +219,7 @@ class ParentView(CustomAPIView):
 
 
 class StudentView(CustomAPIView):
+    parser_classes = (JSONParser, MultiPartParser)
     permission_classes = {"get":[IsAuthenticated], "post":[IsAdmin], "delete":[IsAdmin], "put":[IsAdmin]}
     def get(self, request, pk=None, format=None):
         if pk:
@@ -526,7 +544,7 @@ class CommentView(CustomAPIView):
         comment.delete()
         return Response({"comment": "Deletado com sucesso"}, status=status.HTTP_204_NO_CONTENT)
 
-    def path(self, request, pk=None, format=None):
+    def put(self, request, pk=None, format=None):
         comment = get_object_or_404(Comment, pk=pk)
         serializer = CommentSerializer(comment, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
@@ -730,6 +748,7 @@ def TeacherAllClasses(request, pk=None):
     return Response({"classes": response}, status=status.HTTP_200_OK)
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def AllTeacherSubjectFromClass(request, class_year):
     class_year_teacher_subjects = ClassYearTeacherSubject.objects.filter(class_year_id=class_year)
     class_year_teacher_subjects_serializer = ClassYearTeacherSubjectSerializerReadOnly(class_year_teacher_subjects, many=True)
@@ -739,11 +758,6 @@ def AllTeacherSubjectFromClass(request, class_year):
     #     data.append(cyts["teacher_subject"])
 
     return Response({"detail":"Todos os professores da classe", "class_year_teacher_subjects":class_year_teacher_subjects_serializer.data}, status=status.HTTP_200_OK)
-
-
-
-
-
 
 
 
@@ -766,5 +780,7 @@ def hello_world(request):
     # print(User.objects.get(email="admin@gmail.com"))
     # print(User.objects.get(email="admin@gmail.com"))
     # print(User.objects.all())
-    print(len(Attendance.objects.filter(student=4)))
+    # test = Student.objects.get(email="aluno1@gmail.com").class_year
+    # print(test)
+    # print(len(Attendance.objects.filter(student=4)))
     return Response({"message": {}})

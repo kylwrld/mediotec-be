@@ -62,8 +62,6 @@ urlpatterns = [
 
     path("time_schedule/", views.TimeScheduleView.as_view(), name="time_schedule"),
 
-
-
     path("teste/", views.hello_world, name="teste"),
 
     path("api/token/", views.CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
