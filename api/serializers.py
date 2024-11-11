@@ -116,7 +116,7 @@ class StudentSerializerReadOnly(serializers.ModelSerializer):
         if student_class:
             data['degree'] = student_class.class_year._class.degree
             data['class_year'] = ClassYearSerializerReadOnly(student_class.class_year).data
-            data["attendances"] = len(Attendance.objects.filter(student=instance.id))
+            data["attendances"] = len(Attendance.objects.filter(student=instance.id, type=Attendance.Types.FALTA))
         else:
             data['degree'] = None
             data['class_year'] = None
@@ -142,8 +142,12 @@ class StudentSerializerWrite(serializers.ModelSerializer):
         if student_class:
             data['degree'] = student_class.class_year._class.degree
             data['class_year'] = ClassYearSerializerReadOnly(student_class.class_year).data
+            data["attendances"] = len(Attendance.objects.filter(student=instance.id, type=Attendance.Types.FALTA))
+            
         else:
             data['degree'] = None
+            data['class_year'] = None
+            data["attendances"] = None
 
         return data
 
@@ -165,7 +169,7 @@ class StudentParentSerializer(serializers.ModelSerializer):
         if student_class:
             data['degree'] = student_class.class_year._class.degree
             data['class_year'] = ClassYearSerializerReadOnly(student_class.class_year).data
-            data["attendances"] = len(Attendance.objects.filter(student=instance.id))
+            data["attendances"] = len(Attendance.objects.filter(student=instance.id, type=Attendance.Types.FALTA))
         else:
             data['degree'] = None
             data['class_year'] = None
