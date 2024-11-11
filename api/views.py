@@ -519,7 +519,13 @@ class AnnouncementView(CustomAPIView):
         announcement = get_object_or_404(Announcement, pk=pk)
         serializer = AnnouncementSerializer(announcement, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+
+        if request.data.get("_class", None):
+            class_year = get_object_or_404(ClassYear, pk=request.data.get("_class", None))
+            serializer.save(class_year=class_year)
+        else:
+            serializer.save()
+        
         return Response({"announcement":serializer.data}, status=status.HTTP_204_NO_CONTENT)
 
 
