@@ -6,22 +6,25 @@ from rest_framework.permissions import BasePermission, IsAuthenticated, SAFE_MET
 
 class IsAdmin(JWTAuthentication):
     def has_permission(self, request, view):
-        if request.user.is_authenticated and request.user.type == User.Types.ADMIN:
-            return True
+        if request.user.is_authenticated:
+            if request.user.type == User.Types.ADMIN:
+                return True
 
         return False
 
 class IsTeacher(JWTAuthentication):
     def has_permission(self, request, view):
-        if request.user.is_authenticated and request.user.type == User.Types.TEACHER:
-            return True
+        if request.user.is_authenticated:
+            if request.user.type == User.Types.TEACHER:
+                return True
 
         return False
 
 class IsAdminOrTeacher(JWTAuthentication):
     def has_permission(self, request, view):
-        if request.user.is_authenticated and request.user.type == User.Types.ADMIN or request.user.type == User.Types.TEACHER:
-            return True
+        if request.user.is_authenticated:
+            if request.user.type == User.Types.ADMIN or request.user.type == User.Types.TEACHER:
+                return True
 
         return False
 

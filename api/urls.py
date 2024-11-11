@@ -27,6 +27,7 @@ urlpatterns = [
     path("teacher/<int:pk>/subjects/", views.TeacherAllSubjects, name="teacher_id_subjects"),
     path("teacher/<int:_class_pk>/<int:year>/<int:teacher_pk>/", views.TeacherAllSubjectsFromClass, name="teacher_subjects_class"),
     path("teacher/<int:pk>/classes/", views.TeacherAllClasses, name="teacher_id_classes"),
+    path("teacher/<int:pk>/time_schedule/", views.AllTimeSchedulesFromTeacher, name="teacher_id_time_schedule"),
 
     path("subject/", views.SubjectView.as_view(), name="subject"),
     path("subject/<int:pk>/", views.SubjectView.as_view(), name="subject_id"),

@@ -24,6 +24,7 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
 import json
 from .utils import *
+from django.db.models import Q
 from django.utils import timezone
 from django.db import transaction, connection, reset_queries
 from django.db.utils import IntegrityError
@@ -760,6 +761,34 @@ def AllTeacherSubjectFromClass(request, class_year):
     return Response({"detail":"Todos os professores da classe", "class_year_teacher_subjects":class_year_teacher_subjects_serializer.data}, status=status.HTTP_200_OK)
 
 
+# serializer             takes ± 2.66s
+# for loop               takes ± 0.11s
+# filter Q()             takes ± 0.001s
+# serialize functions    takes ± 2.54s
+# a single time_schedule takes ± 0.91
+
+# serializer | 10x | ± 2.6621812105178835
+# for_loop   | 10x | ± 0.11226716041564941
+# q          | 10x | ± 0.0011049747467041016
+# maybe cache
+@api_view(['GET'])
+@permission_classes([IsAdminOrTeacher])
+def AllTimeSchedulesFromTeacher(request, pk):
+    class_year_teacher_subjects = ClassYearTeacherSubject.objects.filter(teacher_subject__teacher_id=pk)
+
+    #                                           this looks stupid
+    time_schedules = TimeSchedule.objects.filter(
+        Q(monday_class_year_teacher_subject__in=class_year_teacher_subjects)
+        | Q(tuesday_class_year_teacher_subject__in=class_year_teacher_subjects)
+        | Q(wednesday_class_year_teacher_subject__in=class_year_teacher_subjects)
+        | Q(thursday_class_year_teacher_subject__in=class_year_teacher_subjects)
+        | Q(friday_class_year_teacher_subject__in=class_year_teacher_subjects)
+    )
+
+    time_schedules_serializer = TimeScheduleSerializer(time_schedules, many=True)
+    return Response({"detail":"Todos os horários do professor", "time_schedules":time_schedules_serializer.data}, status=status.HTTP_200_OK)
+    # return Response({"detail":"Todos os horários do professor", "time_schedules":data}, status=status.HTTP_200_OK)
+    # return Response({"detail":"Todos os horários do professor"}, status=status.HTTP_200_OK)
 
 
 
