@@ -501,9 +501,16 @@ class AnnouncementView(CustomAPIView):
         errors = check_fields(request, ["title", "body"])
         if errors:
             return Response(errors, status=status.HTTP_400_BAD_REQUEST)
+        
         announcement_serializer = AnnouncementSerializer(data=request.data)
         announcement_serializer.is_valid(raise_exception=True)
-        announcement_serializer.save(user=request.user)
+        
+        if request.data.get("_class", None):
+            class_year = get_object_or_404(ClassYear, pk=request.data.get("_class", None))
+            announcement_serializer.save(user=request.user, class_year=class_year)
+        else:
+            announcement_serializer.save(user=request.user)
+        
         return Response({"detail":"Comunicado criado.", "announcement":announcement_serializer.data})
 
     def delete(self, request, pk=None, format=None):
@@ -515,7 +522,13 @@ class AnnouncementView(CustomAPIView):
         announcement = get_object_or_404(Announcement, pk=pk)
         serializer = AnnouncementSerializer(announcement, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+
+        if request.data.get("_class", None):
+            class_year = get_object_or_404(ClassYear, pk=request.data.get("_class", None))
+            serializer.save(class_year=class_year)
+        else:
+            serializer.save()
+        
         return Response({"announcement":serializer.data}, status=status.HTTP_204_NO_CONTENT)
 
 
