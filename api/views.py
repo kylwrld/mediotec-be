@@ -92,6 +92,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 # TODO: Mudar rota para user/student/ user/teacher/ user/admin/
 # name, email, type, password
 class Signup(CustomAPIView):
+    parser_classes = (JSONParser, MultiPartParser)
     permission_classes = {"post":[IsAdmin]}
 
     def post(self, request, format=None):
@@ -292,7 +293,9 @@ class StudentClassView(CustomAPIView):
         return Response({"student_class": "Deletado com sucesso"}, status=status.HTTP_204_NO_CONTENT)
 
 class TeacherView(CustomAPIView):
+    parser_classes = (JSONParser, MultiPartParser)
     permission_classes = {"get":[IsAuthenticated], "post":[IsAdmin], "put":[IsAdmin], "delete":[IsAdmin]}
+
     def get(self, request, pk=None, format=None):
         if pk:
             teacher = get_object_or_404(Teacher, pk=pk)

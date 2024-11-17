@@ -12,8 +12,16 @@ class UserSerializer(serializers.ModelSerializer):
 class UserSerializerReadOnly(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["id", "name", "email", "type"]
+        fields = ["id", "name", "email", "type", "image"]
         read_only_fields = ("id",)
+
+    def to_representation(self, instance):
+        data = super(UserSerializerReadOnly, self).to_representation(instance)
+        if data.get("image", None):
+            data["image"] = CLOUDINARY_FULL_BASE_PATH + data["image"]
+
+        return data
+
 
 class PhoneSerializer(serializers.ModelSerializer):
     class Meta:
@@ -33,7 +41,7 @@ class ParentSerializer(serializers.ModelSerializer):
 class SignupUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["id", "name", "email", "password", "type", "birth_date"]
+        fields = ["id", "name", "email", "password", "type", "birth_date", "image"]
         read_only_fields = ("id",)
 
     def create(self, validated_data):
@@ -50,6 +58,14 @@ class SignupUserSerializer(serializers.ModelSerializer):
             instance.set_password(password)
         instance.save()
         return instance
+
+    def to_representation(self, instance):
+        data = super(SignupUserSerializer, self).to_representation(instance)
+        if data.get("image", None):
+            data["image"] = CLOUDINARY_FULL_BASE_PATH + data["image"]
+
+        return data
+
 
 class SignupStudentSerializer(serializers.ModelSerializer):
     parents = ParentSerializer(read_only=True, many=True)
@@ -193,16 +209,30 @@ class TeacherSerializer(serializers.ModelSerializer):
     class Meta:
         model = Teacher
         # TODO: need to add Class
-        fields = ["id", "name", "email", "type"]
+        fields = ["id", "name", "email", "type", "image"]
         read_only_fields = ("id", "name", "email", "type")
+
+    def to_representation(self, instance):
+        data = super(TeacherSerializer, self).to_representation(instance)
+        if data.get("image", None):
+            data["image"] = CLOUDINARY_FULL_BASE_PATH + data["image"]
+
+        return data
 
 class TeacherSerializerWrite(serializers.ModelSerializer):
     # subjects = SubjectSerializer(read_only=True, many=True)
     class Meta:
         model = Teacher
         # TODO: need to add Class
-        fields = ["id", "name", "email"]
+        fields = ["id", "name", "email", "image"]
         read_only_fields = ("id",)
+
+    def to_representation(self, instance):
+        data = super(TeacherSerializerWrite, self).to_representation(instance)
+        if data.get("image", None):
+            data["image"] = CLOUDINARY_FULL_BASE_PATH + data["image"]
+
+        return data
 
 
 
