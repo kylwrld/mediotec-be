@@ -90,6 +90,25 @@ class LoginUserSerializer(serializers.ModelSerializer):
         fields = ["id", "email", "password"]
         read_only_fields = ("id",)
 
+
+# repetindo demais
+class AdminSerializerWrite(serializers.ModelSerializer):
+    class Meta:
+        model = Admin
+        # TODO: need to add Class
+        fields = ["id", "name", "email", "image"]
+        read_only_fields = ("id",)
+
+#   repetindo demais
+    def to_representation(self, instance):
+        data = super(AdminSerializerWrite, self).to_representation(instance)
+        if data.get("image", None):
+            data["image"] = CLOUDINARY_FULL_BASE_PATH + data["image"]
+
+        return data
+
+
+
 class ClassSerializer(serializers.ModelSerializer):
     class Meta:
         model = Class
@@ -159,7 +178,7 @@ class StudentSerializerWrite(serializers.ModelSerializer):
             data['degree'] = student_class.class_year._class.degree
             data['class_year'] = ClassYearSerializerReadOnly(student_class.class_year).data
             data["attendances"] = len(Attendance.objects.filter(student=instance.id, type=Attendance.Types.FALTA))
-            
+
         else:
             data['degree'] = None
             data['class_year'] = None

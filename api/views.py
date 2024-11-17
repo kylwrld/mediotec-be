@@ -89,6 +89,33 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
+class AdminView(CustomAPIView):
+    parser_classes = (JSONParser, MultiPartParser)
+    permission_classes = {"get":[IsAdmin], "post":[IsAdmin], "put":[IsAdmin], "delete":[IsAdmin]}
+
+    def get(self, request, pk=None):
+        if pk:
+            admin = get_object_or_404(Admin, pk=pk)
+            admin_serializer = UserSerializerReadOnly(admin)
+            return Response(admin_serializer.data, status=status.HTTP_200_OK)
+
+        admin = Admin.objects.all()
+        admin_serializer = UserSerializerReadOnly(admin, many=True)
+        return Response({"admins":admin_serializer.data}, status=status.HTTP_200_OK)
+
+    def put(self, request, pk=None, format=None):
+        admin = get_object_or_404(Admin, pk=pk)
+        serializer = AdminSerializerWrite(admin, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"admin":serializer.data}, status=status.HTTP_204_NO_CONTENT)
+
+    def delete(self, request, pk=None, format=None):
+        admin = get_object_or_404(Admin, pk=pk)
+        admin.delete()
+        return Response({"admin": "Deletado com sucesso"}, status=status.HTTP_204_NO_CONTENT)
+
+
 # TODO: Mudar rota para user/student/ user/teacher/ user/admin/
 # name, email, type, password
 class Signup(CustomAPIView):
@@ -501,16 +528,16 @@ class AnnouncementView(CustomAPIView):
         errors = check_fields(request, ["title", "body"])
         if errors:
             return Response(errors, status=status.HTTP_400_BAD_REQUEST)
-        
+
         announcement_serializer = AnnouncementSerializer(data=request.data)
         announcement_serializer.is_valid(raise_exception=True)
-        
+
         if request.data.get("_class", None):
             class_year = get_object_or_404(ClassYear, pk=request.data.get("_class", None))
             announcement_serializer.save(user=request.user, class_year=class_year)
         else:
             announcement_serializer.save(user=request.user)
-        
+
         return Response({"detail":"Comunicado criado.", "announcement":announcement_serializer.data})
 
     def delete(self, request, pk=None, format=None):
@@ -528,7 +555,7 @@ class AnnouncementView(CustomAPIView):
             serializer.save(class_year=class_year)
         else:
             serializer.save()
-        
+
         return Response({"announcement":serializer.data}, status=status.HTTP_204_NO_CONTENT)
 
 
