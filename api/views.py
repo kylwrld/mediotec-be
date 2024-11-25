@@ -206,7 +206,7 @@ class Login(CustomAPIView):
         user =  get_object_or_404(User, email=request.data["email"])
         correct_password = user.check_password(request.data["password"])
         if not correct_password:
-            return Response({"detail":"Not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"detail":"Senha incorreta."}, status=status.HTTP_404_NOT_FOUND)
 
         refresh = CustomTokenObtainPairSerializer.get_token(user)
         data = {
