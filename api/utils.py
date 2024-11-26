@@ -1,6 +1,8 @@
 from django.core.exceptions import ValidationError
 from functools import wraps
 from enum import Enum
+from django.http.response import Http404
+import django.shortcuts
 
 import environ
 env = environ.Env()
@@ -29,6 +31,16 @@ def validate_range(MIN: int, MAX: int):
             )
 
     return inner_func
+
+def get_object_or_404(klass, *args, **kwargs):
+    try:
+        return django.shortcuts.get_object_or_404(klass, *args, **kwargs)
+    except Http404:
+        raise Http404(
+            klass.not_found
+            # "No %s matches the given query." % queryset.model._meta.object_name
+        )
+
 
 class GRADE_TABLE(Enum):
     NANA = "ND"

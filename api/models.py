@@ -60,6 +60,8 @@ class User(AbstractUser):
             self.type = self.base_type
         return super().save(*args, **kwargs)
 
+    not_found = "Usuário não encontrado."
+
 
 
 class NotStudentManager(BaseUserManager):
@@ -90,6 +92,8 @@ class Student(User):
     class Meta:
         proxy = True
 
+    not_found = "Estudante não encontrado."
+
 # class StudentProfile(models.Model):
 #     user = models.OneToOneField(User, on_delete=models.CASCADE)
 
@@ -105,9 +109,13 @@ class Teacher(User):
     class Meta:
         proxy = True
 
+    not_found = "Professor não encontrado."
+
 class Subject(models.Model):
     name = models.CharField(max_length=70)
     teachers = models.ManyToManyField(Teacher, related_name="subjects", through="TeacherSubject")
+
+    not_found = "Disciplina não encontrada."
 
 # PROFESSOR + DISCIPLINA
 class TeacherSubject(models.Model):
@@ -116,6 +124,8 @@ class TeacherSubject(models.Model):
 
     class Meta:
         unique_together = [['teacher', 'subject']]
+
+    not_found = "União professor-disciplina não encontrada."
 
 # class TeacherProfile(models.Model):
 #     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -132,6 +142,7 @@ class Admin(User):
     class Meta:
         proxy = True
 
+    not_found = "Coordenador não encontrado."
 
 class Class(models.Model):
     class Types(models.TextChoices):
@@ -152,6 +163,8 @@ class Class(models.Model):
     class Meta:
         unique_together = [['name', 'type']]
 
+    not_found = "Turma não encontrada."
+
 class ClassYear(models.Model):
     _class = models.ForeignKey(Class, related_name="class_years", on_delete=models.CASCADE)
     year = models.PositiveIntegerField()
@@ -161,12 +174,16 @@ class ClassYear(models.Model):
     class Meta:
         unique_together = [['_class', 'year']]
 
+    not_found = "União turma-ano não encontrada."
+
 class StudentClass(models.Model):
     student = models.ForeignKey(Student, related_name="student_class", on_delete=models.CASCADE)
     class_year = models.ForeignKey(ClassYear, on_delete=models.CASCADE)
 
     class Meta:
         unique_together = [['student', 'class_year']]
+
+    not_found = "União estudante-turma não encontrada."
 
 
 class Announcement(models.Model):
@@ -178,12 +195,16 @@ class Announcement(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    not_found = "Aviso não encontrado."
+
 class Comment(models.Model):
     body = models.CharField(max_length=1000)
     announcement = models.ForeignKey(Announcement, related_name="comments", on_delete=models.CASCADE)
     user = models.ForeignKey(User, related_name="comments", on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    not_found = "Comentário não encontrado."
 
 # ALUNO + CONCEITO
 class Grade(models.Model):
@@ -212,16 +233,22 @@ class Grade(models.Model):
     class Meta:
         unique_together = [['student', 'year', 'degree', 'teacher_subject']]
 
+    not_found = "Conceito não encontrado."
+
 
 class Parent(models.Model):
     name = models.CharField(max_length=70)
     cpf = models.CharField(max_length=14, unique=True)
     student = models.ForeignKey(User, related_name="parents", on_delete=models.CASCADE)
 
+    not_found = "Parente não encontrado."
+
 class Phone(models.Model):
     ddd = models.CharField(max_length=2)
     number = models.CharField(max_length=9)
     parent = models.ForeignKey(Parent, related_name="phones", on_delete=models.CASCADE)
+
+    not_found = "Telefone não encontrado."
 
 # (TURMA + ANO) + (PROFESSOR + DISCIPLINA)
 class ClassYearTeacherSubject(models.Model):
@@ -231,6 +258,7 @@ class ClassYearTeacherSubject(models.Model):
     class Meta:
         unique_together = [['class_year', 'teacher_subject']]
 
+    not_found = "União turma-ano-professor-disciplina não encontrada."
 
 # SEGUNDA | TURMA 1A | 7h | 0m  | PROFESSOR 1 | DISCIPLINA 1
 # SEGUNDA | TURMA 2A | 7h | 0m  | PROFESSOR 2 | DISCIPLINA 1
@@ -269,6 +297,8 @@ class TimeSchedule(models.Model):
     # class Meta:
     #     unique_together = [['hour', 'minute', 'class_year']]
 
+    not_found = "Horário não encontrado."
+
 class Attendance(models.Model):
     class Types(models.TextChoices):
         FALTA = "FALTA", "FALTA"
@@ -285,6 +315,7 @@ class Attendance(models.Model):
     class Meta:
         unique_together = [["student", "class_year_teacher_subject", "day"]]
 
+    not_found = "Presença não encontrada."
 
 # class Hours(models.Choices):
 #     M1 = (7, 0)
