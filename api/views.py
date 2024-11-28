@@ -216,6 +216,30 @@ class Login(CustomAPIView):
         }
         return Response(data=data, status=status.HTTP_201_CREATED)
 
+class LoginStudent(CustomAPIView):
+    permission_classes = {"post":[]}
+
+    # email, password
+    def post(self, request, format=None):
+        errors = check_fields(request, ["email", "password"])
+        if errors:
+            return Response(errors, status=status.HTTP_400_BAD_REQUEST)
+
+        user =  get_object_or_404(User, email=request.data["email"])
+        if user.type == User.Types.ADMIN or user.type == User.Types.TEACHER:
+            return Response({"detail":"Somente estudantes podem fazer login."}, status=status.HTTP_400_BAD_REQUEST)
+            
+        correct_password = user.check_password(request.data["password"])
+        if not correct_password:
+            return Response({"detail":"Senha incorreta."}, status=status.HTTP_404_NOT_FOUND)
+
+        refresh = CustomTokenObtainPairSerializer.get_token(user)
+        data = {
+            "refresh":str(refresh),
+            "access":str(refresh.access_token),
+        }
+        return Response(data=data, status=status.HTTP_201_CREATED)
+
 class ParentView(CustomAPIView):
     permission_classes = {"get":[IsAuthenticated], "post":[IsAdmin], "delete":[IsAdmin], "put":[IsAdmin]}
 
