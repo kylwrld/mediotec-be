@@ -228,7 +228,7 @@ class LoginStudent(CustomAPIView):
         user =  get_object_or_404(User, email=request.data["email"])
         if user.type == User.Types.ADMIN or user.type == User.Types.TEACHER:
             return Response({"detail":"Somente estudantes podem fazer login."}, status=status.HTTP_400_BAD_REQUEST)
-            
+
         correct_password = user.check_password(request.data["password"])
         if not correct_password:
             return Response({"detail":"Senha incorreta."}, status=status.HTTP_404_NOT_FOUND)
@@ -780,7 +780,7 @@ class TimeScheduleView(APIView):
 def TeacherAllSubjects(request, pk=None):
     teacher_subject = TeacherSubject.objects.filter(teacher_id=pk)
     teacher_subject_serializer = TeacherSubjectSerializerReadOnly(teacher_subject, many=True)
-    return Response({"teacher": teacher_subject_serializer.data}, status=status.HTTP_200_OK)
+    return Response({"teacher_subjects": teacher_subject_serializer.data}, status=status.HTTP_200_OK)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
