@@ -301,9 +301,16 @@ class StudentClassView(CustomAPIView):
     permission_classes = {"get":[IsAuthenticated], "post":[IsAdmin]}
     # class + year
     def get(self, request, class_pk=None, year=timezone.now().year, format=None):
-        class_year = get_object_or_404(ClassYear, _class_id=class_pk, year=year)
+        _class = get_object_or_404(Class, pk=class_pk)
+        class_serializer = ClassSerializer(_class)
+        class_years = ClassYear.objects.filter(_class=_class)
+        years = list(map(lambda cy: cy.year, class_years))
+        try:
+            class_year = ClassYear.objects.get(_class=_class, year=year)
+        except:
+            return Response({"detail":f"Turma não tem registros de {year}", "_class":class_serializer.data, "years": years})
         class_year_serializer = ClassYearSerializerAllStudents(class_year)
-        return Response(class_year_serializer.data, status=status.HTTP_200_OK)
+        return Response({"_class": class_serializer.data, "class_year": class_year_serializer.data, "years": years}, status=status.HTTP_200_OK)
 
     # student, _class
     def post(self, request, class_pk=None, year=timezone.now().year, format=None):
@@ -448,6 +455,12 @@ class TeacherSubjectView(CustomAPIView):
 class ClassView(CustomAPIView):
     permission_classes = {"get":[IsAuthenticated], "post":[IsAdmin], "put":[IsAdmin], "delete":[IsAdmin]}
     def get(self, request, pk=None, format=None):
+        degree = request.query_params.get("degree", None)
+        if degree:
+            _class = Class.objects.filter(degree=degree)
+            class_serializer = ClassSerializer(_class, many=True)
+            return Response({"classes":class_serializer.data}, status=status.HTTP_200_OK)
+
         if pk:
             _class =  get_object_or_404(Class, pk=pk)
             class_serializer = ClassSerializer(_class)
@@ -484,7 +497,7 @@ class ClassView(CustomAPIView):
 
 class ClassYearView(CustomAPIView):
     permission_classes = {"get":[IsAuthenticated], "post":[IsAdmin], "put":[IsAdmin], "delete":[IsAdmin]}
-    def get(self, request, pk=None, format=None):
+    def get(self, request, pk=None, class_pk=None, year=timezone.now().year, format=None):
         # TODO: Pass year in path
         if pk:
             class_year = ClassYear.objects.filter(year=timezone.now().year, pk=pk)
@@ -880,4 +893,9 @@ def hello_world(request):
     # test = Student.objects.get(email="aluno1@gmail.com").class_year
     # print(test)
     # print(len(Attendance.objects.filter(student=4)))
-    return Response({"message": {}})
+    # print(ClassYear.objects.filter(_class_id=1).values("year"))
+
+    class_years = ClassYear.objects.filter(_class_id=1)
+    print(list(map(lambda class_year: class_year.year, class_years)))
+
+    return Response({"message": ClassYear.objects.filter(_class_id=1).values_list("year")})
