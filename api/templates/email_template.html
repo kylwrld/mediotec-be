@@ -1,0 +1,101 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+            /* Inline CSS */
+            body {
+                font-family: Arial, sans-serif;
+                background-color: #f0f0f0;
+                margin: 0;
+            }
+
+            .content {
+
+                max-width: 500px;
+                /* gap: 15px; */
+            }
+
+            #title-wrapper {
+                background-color: #2563eb;
+                border-top-left-radius: 0.5rem;
+                border-top-right-radius: 0.5rem;
+                color: white;
+                padding: 15px;
+            }
+
+            #title {
+                font-size: 1.7em;
+                font-weight: 600;
+                margin: 0;
+            }
+
+            #body-wrapper {
+                border-left: 1px solid #64748b;
+                border-right: 1px solid #64748b;
+                border-bottom: 1px solid #64748b;
+                border-bottom-left-radius: 0.5rem;
+                border-bottom-right-radius: 0.5rem;
+                /* padding: 15px; */
+            }
+
+            #body {
+                font-size: 1em;
+                margin: 0;
+                white-space: pre-wrap;
+                font-weight: 500;
+                padding: 15px;
+            }
+
+            .author {
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                gap: 5px;
+                padding-left: 15px;
+                padding-right: 15px;
+                padding-top: 10px;
+                padding-bottom: 10px;
+            }
+
+            .muted {
+                display: inline-block;
+                font-size: 1em;
+                color: #64748b;
+                margin: 0px;
+                margin-right: 5px;
+            }
+
+            .sep {
+                background-color: #64748b;
+                width: 100%;
+                height: 1px;
+            }
+            .point {
+                background-color: #64748b;
+                width: 5px;
+                height: 5px;
+                border-radius: 100px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="content">
+            <div id="title-wrapper">
+                <h1 id="title">{{ title }}</h1>
+            </div>
+            <!-- <div class="sep"></div> -->
+            <div id="body-wrapper">
+                <div class="author">
+                    <p class="muted">{{ author }}</p>
+                    <!-- <div class="point"></div> -->
+                    <p class="muted">{{ created_at }}</p>
+                </div>
+                <h2 id="body">{{ body }}</h2>
+            </div>
+        </div>
+        <!-- <div class="footer">&copy; {{ year }} ABC Inc. No rights reserved.</div> -->
+    </body>
+</html>

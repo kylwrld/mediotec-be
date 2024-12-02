@@ -18,7 +18,6 @@ from django.conf import settings
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
 import environ
 env = environ.Env()
 environ.Env.read_env()
@@ -31,7 +30,7 @@ environ.Env.read_env()
 SECRET_KEY = env("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 
 # Application definition
@@ -222,6 +221,13 @@ CORS_ALLOW_HEADERS = (
     "x-requested-with",
     "content-disposition",
 )
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_HOST_USER = 'sitesloginn@gmail.com'
+EMAIL_HOST_PASSWORD = 'wqxglhqpmkchlyph'
+EMAIL_USE_TLS = True
 
 import cloudinary
 

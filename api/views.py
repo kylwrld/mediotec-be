@@ -8,6 +8,7 @@ from .models import Grade
 from .permissions import *
 
 from .serializers import *
+import os
 
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
@@ -29,6 +30,7 @@ from django.db.models import Q
 from django.utils import timezone
 from django.db import transaction, connection, reset_queries
 from django.db.utils import IntegrityError
+from django.conf import settings
 from itertools import islice
 
 import pytz
@@ -895,7 +897,18 @@ def hello_world(request):
     # print(len(Attendance.objects.filter(student=4)))
     # print(ClassYear.objects.filter(_class_id=1).values("year"))
 
-    class_years = ClassYear.objects.filter(_class_id=1)
-    print(list(map(lambda class_year: class_year.year, class_years)))
+    class_year = ClassYear.objects.get(id=1)
+    # print(list(map(lambda class_year: class_year.year, class_years)))
 
-    return Response({"message": ClassYear.objects.filter(_class_id=1).values_list("year")})
+    # class_years = ClassYear.objects.filter(year=timezone.now().year)
+    # all_students = [class_year.students.all() for class_year in class_years]
+    # flat_students = []
+    # for students in all_students:
+    #     for student in students:
+    #         flat_students.append(student)
+
+    # print(flat_students)
+
+    # print(settings.BASE_DIR.joinpath("api\\template\\email_template.html"))
+
+    return Response({})
