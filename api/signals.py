@@ -72,7 +72,8 @@ def notify_users_email(sender, instance: Announcement, created, **kwargs):
         connection = get_connection()
         connection.open()
 
-        template_name = settings.BASE_DIR.joinpath("api\\templates\\email_template.html")
+        template_name = settings.BASE_DIR.joinpath("api/templates/email_template.html")
+        print("b", settings.BASE_DIR)
         print("b", template_name)
         html_content =  render_to_string(
             template_name=template_name,
