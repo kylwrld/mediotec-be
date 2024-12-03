@@ -114,6 +114,9 @@ class AdminView(CustomAPIView):
         return Response({"admin":serializer.data}, status=status.HTTP_204_NO_CONTENT)
 
     def delete(self, request, pk=None, format=None):
+        if request.user.id == pk:
+            return Response({"detail":"Você não pode se deletar"}, status=status.HTTP_400_BAD_REQUEST)
+
         admin = get_object_or_404(Admin, pk=pk)
         admin.delete()
         return Response({"admin": "Deletado com sucesso"}, status=status.HTTP_204_NO_CONTENT)
@@ -300,7 +303,7 @@ class StudentView(CustomAPIView):
         return Response({"student":serializer.data}, status=status.HTTP_204_NO_CONTENT)
 
 class StudentClassView(CustomAPIView):
-    permission_classes = {"get":[IsAuthenticated], "post":[IsAdmin]}
+    permission_classes = {"get":[IsAuthenticated], "post":[IsAdmin], "delete":[IsAdmin]}
     # class + year
     def get(self, request, class_pk=None, year=timezone.now().year, format=None):
         _class = get_object_or_404(Class, pk=class_pk)
@@ -348,8 +351,10 @@ class StudentClassView(CustomAPIView):
                 return Response({"detail":"Erro ao persistir no banco de dados. Tenha certeza de que os ID's são válidos."}, status=status.HTTP_400_BAD_REQUEST)
         return Response({"detail":"ID do estudante inválido."}, status=status.HTTP_400_BAD_REQUEST)
 
-    def delete(self, request, pk=None, format=None):
-        student_class = get_object_or_404(StudentClass, pk=pk)
+    # /student_class_/<class_pk>/<year>/<student_pk>/
+    def delete(self, request, class_pk=None, year=timezone.now().year, student_pk=None, format=None):
+        class_year = get_object_or_404(ClassYear, _class_id=class_pk, year=year)
+        student_class = get_object_or_404(StudentClass, class_year=class_year, student_id=student_pk)
         student_class.delete()
         return Response({"student_class": "Deletado com sucesso"}, status=status.HTTP_204_NO_CONTENT)
 
@@ -895,9 +900,8 @@ def hello_world(request):
     # test = Student.objects.get(email="aluno1@gmail.com").class_year
     # print(test)
     # print(len(Attendance.objects.filter(student=4)))
-    # print(ClassYear.objects.filter(_class_id=1).values("year"))
 
-    class_year = ClassYear.objects.get(id=1)
+    # print(ClassYear.objects.filter(_class_id=1).values_list("email", flat=True))
     # print(list(map(lambda class_year: class_year.year, class_years)))
 
     # class_years = ClassYear.objects.filter(year=timezone.now().year)
@@ -907,8 +911,13 @@ def hello_world(request):
     #     for student in students:
     #         flat_students.append(student)
 
-    # print(flat_students)
+    # print(class_year)
 
     # print(settings.BASE_DIR.joinpath("api\\template\\email_template.html"))
+    # class_year = ClassYear.objects.get(id=1)
+    # print(class_year.students.values_list("email"))
+
+    # class_years = ClassYear.objects.filter(year=timezone.now().year)
+    # all_students = [class_year.students.values_list("email", flat=True) for class_year in class_years]
 
     return Response({})
