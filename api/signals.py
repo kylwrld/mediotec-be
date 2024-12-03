@@ -58,10 +58,10 @@ from django.utils import timezone
 
 from django.core.mail import get_connection, EmailMultiAlternatives
 
+# it might slow down the server
 @receiver(post_save, sender=Announcement, dispatch_uid="notify_users_email")
 def notify_users_email(sender, instance: Announcement, created, **kwargs):
     if created:
-        print("a")
         context = {
             "author":instance.user.name,
             "title":instance.title,
@@ -73,8 +73,6 @@ def notify_users_email(sender, instance: Announcement, created, **kwargs):
         connection.open()
 
         template_name = settings.BASE_DIR.joinpath("api/templates/email_template.html")
-        print("b", settings.BASE_DIR)
-        print("b", template_name)
         html_content =  render_to_string(
             template_name=template_name,
             context=context
@@ -88,9 +86,7 @@ def notify_users_email(sender, instance: Announcement, created, **kwargs):
 
             msg = EmailMultiAlternatives("Novo Aviso", plain_message, settings.EMAIL_HOST_USER, ["noreply@example.com"], bcc=students_emails, connection=connection)
             msg.attach_alternative(html_content, "text/html")
-            print("c")
             msg.send()
-            print("d")
         except:
             # all students | flat_students
             class_years = ClassYear.objects.filter(year=timezone.now().year)
@@ -103,8 +99,6 @@ def notify_users_email(sender, instance: Announcement, created, **kwargs):
             plain_message = strip_tags(html_content)
             msg = EmailMultiAlternatives("Novo Aviso", plain_message, settings.EMAIL_HOST_USER, ["noreply@example.com"], bcc=flat_students, connection=connection)
             msg.attach_alternative(html_content, "text/html")
-            print("f")
             msg.send()
-            print("g")
         finally:
             connection.close()
