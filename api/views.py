@@ -553,7 +553,13 @@ class ClassYearTeacherSubjectView(CustomAPIView):
         class_teacher_subject_serialializer.save()
         return Response({"detail":"Turma atribuída ao professor.", "turma":class_teacher_subject_serialializer.data})
 
+    # right now im going to accept class_id and teacher_id but the right way should be
+    # passing class yeak pk
+    # not implemented yet
     def delete(self, request, pk=None, format=None):
+        # right way
+        # class_year_teacher_subject = get_object_or_404(ClassYearTeacherSubject, pk=pk)
+
         class_year_teacher_subject = get_object_or_404(ClassYearTeacherSubject, pk=pk)
         class_year_teacher_subject.delete()
         return Response({"class_year_teacher_subject": "Deletado com sucesso"}, status=status.HTTP_204_NO_CONTENT)
@@ -796,8 +802,22 @@ class TimeScheduleView(APIView):
 
         # return Response({"detail":"Horário atribuído.", "time_schedules":None}, status=status.HTTP_201_CREATED)
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def ClassYearAllSubjects(request, pk=None):
+    class_year_teacher_subjects = ClassYearTeacherSubject.objects.filter(class_year_id=pk)
+    subjects_count = {}
+    subjects = []
+    
+    for class_year_teacher_subject in class_year_teacher_subjects:
+        if subjects_count.get(class_year_teacher_subject.teacher_subject.subject.name, False):
+            continue
 
+        subjects.append(class_year_teacher_subject.teacher_subject.subject)
+        subjects_count[class_year_teacher_subject.teacher_subject.subject.name] = True
 
+    subjects_serializer = SubjectSerializer(subjects, many=True)
+    return Response({"subjects": subjects_serializer.data}, status=status.HTTP_200_OK)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])

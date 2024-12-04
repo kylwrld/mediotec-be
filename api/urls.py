@@ -53,6 +53,7 @@ urlpatterns = [
     # ClassYear
     path("class_year/", views.ClassYearView.as_view(), name="class_year"),
     path("class_year/<int:pk>/", views.ClassYearView.as_view(), name="class_year_id"),
+    path("class_year/<int:pk>/subjects/", views.ClassYearAllSubjects, name="class_year_id"),
 
     path("class_year_teacher_subject/", views.ClassYearTeacherSubjectView.as_view(), name="class_year_teacher_subject"),
     path("class_year_teacher_subject/<int:class_pk>/<int:year>/", views.ClassYearTeacherSubjectView.as_view(), name="class_year_teacher_subject_id"),
