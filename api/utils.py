@@ -41,6 +41,12 @@ def get_object_or_404(klass, *args, **kwargs):
             # "No %s matches the given query." % queryset.model._meta.object_name
         )
 
+def get_or_none(klass, *args, **kwargs):
+    try:
+        return django.shortcuts.get_object_or_404(klass, *args, **kwargs)
+    except Http404:
+        return None
+
 
 class GRADE_TABLE(Enum):
     NANA = "ND"

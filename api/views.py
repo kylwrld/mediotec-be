@@ -68,7 +68,7 @@ class CustomRefreshToken(RefreshToken):
         if user.type == User.Types.STUDENT:
             _class = StudentClass.objects.filter(student=user.id).last()
             if _class is not None:
-                token["class_id"] = _class.id
+                token["class_id"] = _class.class_year._class_id
 
         if api_settings.CHECK_REVOKE_TOKEN:
             token[api_settings.REVOKE_TOKEN_CLAIM] = get_md5_hash_password(
@@ -86,6 +86,10 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['id'] = user.id
         token['name'] = user.name
         token['type'] = user.type
+        if user.type == User.Types.STUDENT:
+            _class = StudentClass.objects.filter(student=user.id).last()
+            if _class is not None:
+                token["class_id"] = _class.class_year._class_id
 
         return token
 
