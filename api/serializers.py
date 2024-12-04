@@ -147,7 +147,7 @@ class StudentSerializerReadOnly(serializers.ModelSerializer):
         if data.get("image", None) is not None:
             data["image"] = CLOUDINARY_FULL_BASE_PATH + data["image"]
 
-        student_class = StudentClass.objects.filter(student=instance.id).last()
+        student_class = StudentClass.objects.filter(student=instance.id, class_year__year=timezone.now().year).last()
         if student_class:
             data['degree'] = student_class.class_year._class.degree
             data['class_year'] = ClassYearSerializerReadOnly(student_class.class_year).data
@@ -172,8 +172,8 @@ class StudentSerializerWrite(serializers.ModelSerializer):
             data["image"] = CLOUDINARY_FULL_BASE_PATH + data["image"]
 
 
-        # print(StudentClass.objects.filter(student=instance.id).last().class_year._class.degree)
-        student_class = StudentClass.objects.filter(student=instance.id).last()
+        # print(StudentClass.objects.filter(student=instance.id, class_year__year=timezone.now().year).last().class_year._class.degree)
+        student_class = StudentClass.objects.filter(student=instance.id, class_year__year=timezone.now().year).last()
         if student_class:
             data['degree'] = student_class.class_year._class.degree
             data['class_year'] = ClassYearSerializerReadOnly(student_class.class_year).data
@@ -200,7 +200,7 @@ class StudentParentSerializer(serializers.ModelSerializer):
         if data.get("image", None) is not None:
             data["image"] = CLOUDINARY_FULL_BASE_PATH + data["image"]
 
-        student_class = StudentClass.objects.filter(student=instance.id).last()
+        student_class = StudentClass.objects.filter(student=instance.id, class_year__year=timezone.now().year).last()
         if student_class:
             data['degree'] = student_class.class_year._class.degree
             data['class_year'] = ClassYearSerializerReadOnly(student_class.class_year).data

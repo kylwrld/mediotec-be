@@ -66,7 +66,7 @@ class CustomRefreshToken(RefreshToken):
         token['type'] = user.type
 
         if user.type == User.Types.STUDENT:
-            _class = StudentClass.objects.filter(student=user.id).last()
+            _class = StudentClass.objects.filter(student=user.id, class_year__year=timezone.now().year).last()
             if _class is not None:
                 token["class_id"] = _class.class_year._class_id
 
@@ -87,7 +87,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['name'] = user.name
         token['type'] = user.type
         if user.type == User.Types.STUDENT:
-            _class = StudentClass.objects.filter(student=user.id).last()
+            _class = StudentClass.objects.filter(student=user.id, class_year__year=timezone.now().year).last()
             if _class is not None:
                 token["class_id"] = _class.class_year._class_id
 
@@ -98,7 +98,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
 class AdminView(CustomAPIView):
     parser_classes = (JSONParser, MultiPartParser)
-    permission_classes = {"get":[IsAdmin], "post":[IsAdmin], "put":[IsAdmin], "delete":[IsAdmin]}
+    permission_classes = {"options": [IsAuthenticated], "get":[IsAdmin], "post":[IsAdmin], "put":[IsAdmin], "delete":[IsAdmin]}
 
     def get(self, request, pk=None):
         if pk:
@@ -250,7 +250,7 @@ class LoginStudent(CustomAPIView):
         return Response(data=data, status=status.HTTP_201_CREATED)
 
 class ParentView(CustomAPIView):
-    permission_classes = {"get":[IsAuthenticated], "post":[IsAdmin], "delete":[IsAdmin], "put":[IsAdmin]}
+    permission_classes = {"options": [IsAuthenticated], "get":[IsAuthenticated], "post":[IsAdmin], "delete":[IsAdmin], "put":[IsAdmin]}
 
     def get(self, request, student_pk=None, format=None):
         parents = get_object_or_404(Student, pk=student_pk).parents.all()
@@ -283,7 +283,7 @@ class ParentView(CustomAPIView):
 
 class StudentView(CustomAPIView):
     parser_classes = (JSONParser, MultiPartParser)
-    permission_classes = {"get":[IsAuthenticated], "post":[IsAdmin], "delete":[IsAdmin], "put":[IsAdmin]}
+    permission_classes = {"options": [IsAuthenticated], "get":[IsAuthenticated], "post":[IsAdmin], "delete":[IsAdmin], "put":[IsAdmin]}
     def get(self, request, pk=None, format=None):
         if pk:
             student = get_object_or_404(Student, pk=pk)
@@ -307,7 +307,7 @@ class StudentView(CustomAPIView):
         return Response({"student":serializer.data}, status=status.HTTP_204_NO_CONTENT)
 
 class StudentClassView(CustomAPIView):
-    permission_classes = {"get":[IsAuthenticated], "post":[IsAdmin], "delete":[IsAdmin]}
+    permission_classes = {"options": [IsAuthenticated], "get":[IsAuthenticated], "post":[IsAdmin], "delete":[IsAdmin]}
     # class + year
     def get(self, request, class_pk=None, year=timezone.now().year, format=None):
         _class = get_object_or_404(Class, pk=class_pk)
@@ -364,7 +364,7 @@ class StudentClassView(CustomAPIView):
 
 class TeacherView(CustomAPIView):
     parser_classes = (JSONParser, MultiPartParser)
-    permission_classes = {"get":[IsAuthenticated], "post":[IsAdmin], "put":[IsAdmin], "delete":[IsAdmin]}
+    permission_classes = {"options": [IsAuthenticated], "get":[IsAuthenticated], "post":[IsAdmin], "put":[IsAdmin], "delete":[IsAdmin]}
 
     def get(self, request, pk=None, format=None):
         if pk:
@@ -390,7 +390,7 @@ class TeacherView(CustomAPIView):
 
 
 class SubjectView(CustomAPIView):
-    permission_classes = {"get":[IsAuthenticated], "post":[IsAdmin], "put":[IsAdmin], "delete":[IsAdmin]}
+    permission_classes = {"options": [IsAuthenticated], "get":[IsAuthenticated], "post":[IsAdmin], "put":[IsAdmin], "delete":[IsAdmin]}
     def get(self, request, pk=None, format=None):
         if pk:
             subject = get_object_or_404(Subject, pk=pk)
@@ -421,7 +421,7 @@ class SubjectView(CustomAPIView):
         return Response({"subject":serializer.data}, status=status.HTTP_204_NO_CONTENT)
 
 class TeacherSubjectView(CustomAPIView):
-    permission_classes = {"get":[IsAuthenticated], "post":[IsAdmin], "put":[IsAdmin], "delete":[IsAdmin]}
+    permission_classes = {"options": [IsAuthenticated], "get":[IsAuthenticated], "post":[IsAdmin], "put":[IsAdmin], "delete":[IsAdmin]}
     def get(self, request, pk=None, format=None):
         if pk:
             teacher_subject = get_object_or_404(TeacherSubject, pk=pk)
@@ -464,7 +464,7 @@ class TeacherSubjectView(CustomAPIView):
         return Response({"teacher_subject":data.data}, status=status.HTTP_204_NO_CONTENT)
 
 class ClassView(CustomAPIView):
-    permission_classes = {"get":[IsAuthenticated], "post":[IsAdmin], "put":[IsAdmin], "delete":[IsAdmin]}
+    permission_classes = {"options": [IsAuthenticated], "get":[IsAuthenticated], "post":[IsAdmin], "put":[IsAdmin], "delete":[IsAdmin]}
     def get(self, request, pk=None, format=None):
         degree = request.query_params.get("degree", None)
         if degree:
@@ -507,7 +507,7 @@ class ClassView(CustomAPIView):
         return Response({"_class":serializer.data}, status=status.HTTP_204_NO_CONTENT)
 
 class ClassYearView(CustomAPIView):
-    permission_classes = {"get":[IsAuthenticated], "post":[IsAdmin], "put":[IsAdmin], "delete":[IsAdmin]}
+    permission_classes = {"options": [IsAuthenticated], "get":[IsAuthenticated], "post":[IsAdmin], "put":[IsAdmin], "delete":[IsAdmin]}
     def get(self, request, pk=None, class_pk=None, year=timezone.now().year, format=None):
         # TODO: Pass year in path
         if pk:
@@ -534,7 +534,7 @@ class ClassYearView(CustomAPIView):
 
 
 class ClassYearTeacherSubjectView(CustomAPIView):
-    permission_classes = {"get":[IsAuthenticated], "post":[IsAdmin]}
+    permission_classes = {"options": [IsAuthenticated], "get":[IsAuthenticated], "post":[IsAdmin]}
     def get(self, request, class_pk=None, year=timezone.now().year, format=None):
         class_year = get_object_or_404(ClassYear, _class_id=class_pk, year=year)
         class_year_serializer = ClassYearSerializerAllTeachers(class_year)
@@ -559,7 +559,7 @@ class ClassYearTeacherSubjectView(CustomAPIView):
         return Response({"class_year_teacher_subject": "Deletado com sucesso"}, status=status.HTTP_204_NO_CONTENT)
 
 class AnnouncementView(CustomAPIView):
-    permission_classes = {"get":[IsAuthenticated], "post":[IsAdminOrTeacher], "put":[IsAdminOrTeacher], "delete":[IsAdminOrTeacher]}
+    permission_classes = {"options": [IsAuthenticated], "get":[IsAuthenticated], "post":[IsAdminOrTeacher], "put":[IsAdminOrTeacher], "delete":[IsAdminOrTeacher]}
 
     def get(self, request, pk=None, format=None):
         if pk:
@@ -609,7 +609,7 @@ class AnnouncementView(CustomAPIView):
 
 
 class CommentView(CustomAPIView):
-    permission_classes = {"get":[IsAuthenticated], "post":[IsAuthenticated], "put":[IsAdminOrTeacher], "delete":[IsAdminOrTeacher]}
+    permission_classes = {"options": [IsAuthenticated], "get":[IsAuthenticated], "post":[IsAuthenticated], "put":[IsAdminOrTeacher], "delete":[IsAdminOrTeacher]}
     def get(self, request, pk=None, format=None):
         if pk:
             comment = get_object_or_404(Comment, pk=pk)
@@ -645,7 +645,7 @@ class CommentView(CustomAPIView):
         return Response({"comment":serializer.data}, status=status.HTTP_204_NO_CONTENT)
 
 class GradeView(CustomAPIView):
-    permission_classes = {"get":[IsAuthenticated], "post":[IsTeacher]}
+    permission_classes = {"options": [IsAuthenticated], "get":[IsAuthenticated], "post":[IsTeacher]}
 
     def get(self, request, student_pk=None, year=timezone.now().year, format=None):
         if request.user == User.Types.STUDENT:
@@ -678,7 +678,7 @@ class GradeView(CustomAPIView):
             return Response({"detail":"Erro ao persistir no banco de dados. Tenha certeza de que os ID's são válidos."}, status=status.HTTP_400_BAD_REQUEST)
 
 class AttendanceView(CustomAPIView):
-    permission_classes = {"get":[IsAuthenticated], "post":[IsTeacher]}
+    permission_classes = {"options": [IsAuthenticated], "get":[IsAuthenticated], "post":[IsTeacher]}
 
     # path params: class_year, teacher_subject
     # query params: date
