@@ -174,6 +174,9 @@ class ClassYear(models.Model):
     class Meta:
         unique_together = [['_class', 'year']]
 
+    def __str__(self) -> str:
+        return str(self._class.name)
+
     not_found = "União turma-ano não encontrada."
 
 class StudentClass(models.Model):

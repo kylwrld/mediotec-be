@@ -588,7 +588,7 @@ class AnnouncementView(CustomAPIView):
         announcement_serializer.is_valid(raise_exception=True)
 
         if request.data.get("_class", None):
-            class_year = get_object_or_404(ClassYear, pk=request.data.get("_class", None))
+            class_year = get_object_or_404(ClassYear, _class_id=request.data.get("_class", None), year=timezone.now().year)
             announcement_serializer.save(user=request.user, class_year=class_year)
         else:
             announcement_serializer.save(user=request.user)
@@ -606,7 +606,7 @@ class AnnouncementView(CustomAPIView):
         serializer.is_valid(raise_exception=True)
 
         if request.data.get("_class", None):
-            class_year = get_object_or_404(ClassYear, pk=request.data.get("_class", None))
+            class_year = get_object_or_404(ClassYear, _class_id=request.data.get("_class", None), year=timezone.now().year)
             serializer.save(class_year=class_year)
         else:
             serializer.save()
@@ -808,7 +808,7 @@ def ClassYearAllSubjects(request, pk=None):
     class_year_teacher_subjects = ClassYearTeacherSubject.objects.filter(class_year_id=pk)
     subjects_count = {}
     subjects = []
-    
+
     for class_year_teacher_subject in class_year_teacher_subjects:
         if subjects_count.get(class_year_teacher_subject.teacher_subject.subject.name, False):
             continue
