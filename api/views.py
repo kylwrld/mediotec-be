@@ -691,7 +691,10 @@ class AttendanceView(CustomAPIView):
     def get(self, request, class_year=None, teacher_subject=None):
         today = timezone.now()
         date = request.query_params.get("date", f"{today.year}-{today.month}-{today.day}")
-        class_year_teacher_subject = get_object_or_404(ClassYearTeacherSubject, class_year_id=class_year, teacher_subject_id=teacher_subject)
+
+        # this is wrong, it should be just one get_object_or_404, the _class_year one is pointless
+        _class_year = get_object_or_404(ClassYear, _class_id=class_year, year=today.year)
+        class_year_teacher_subject = get_object_or_404(ClassYearTeacherSubject, class_year=_class_year, teacher_subject_id=teacher_subject)
 
         if not teacher_subject:
             return Response({"detail":"Procure com uma disciplina"}, status=status.HTTP_400_BAD_REQUEST)
